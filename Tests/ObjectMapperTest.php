@@ -100,7 +100,7 @@ final class ObjectMapperTest extends TestCase
     {
         $this->expectException(MappingException::class);
         $this->expectExceptionMessage('Mapping target not found for source "class@anonymous".');
-        (new ObjectMapper())->map(new class () {});
+        (new ObjectMapper())->map(new class {});
     }
 
     public function testHasNothingToMapToWithNamedClass()
@@ -211,7 +211,7 @@ final class ObjectMapperTest extends TestCase
         };
     }
 
-    public function testSourceOnly(): void
+    public function testSourceOnly()
     {
         $a = new \stdClass();
         $a->name = 'test';
@@ -220,7 +220,7 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(SourceOnly::class, $mapped);
         $this->assertSame('test', $mapped->mappedName);
 
-        $a = new class () {
+        $a = new class {
             public function __get(string $key): string
             {
                 return match ($key) {
@@ -235,13 +235,12 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame('test', $mapped->mappedName);
     }
 
-
-    public function testTransformToWrongValueType(): void
+    public function testTransformToWrongValueType()
     {
         $this->expectException(MappingTransformException::class);
         $this->expectExceptionMessage('Cannot map "stdClass" to a non-object target of type "string".');
 
-        $u = new \stdClass;
+        $u = new \stdClass();
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
@@ -250,16 +249,16 @@ final class ObjectMapperTest extends TestCase
         $mapper->map($u);
     }
 
-    public function testTransformToWrongObject(): void
+    public function testTransformToWrongObject()
     {
         $this->expectException(MappingException::class);
-        $this->expectExceptionMessage(sprintf('Expected the mapped object to be an instance of "%s" but got "stdClass".', ClassWithoutTarget::class));
+        $this->expectExceptionMessage(\sprintf('Expected the mapped object to be an instance of "%s" but got "stdClass".', ClassWithoutTarget::class));
 
-        $u = new \stdClass;
+        $u = new \stdClass();
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: fn() => new \stdClass)]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: fn () => new \stdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }

@@ -29,14 +29,10 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 final class ObjectMapper implements ObjectMapperInterface
 {
     /**
-     * A SplObjectStorage that tracks recursive references.
+     * Tracks recursive references.
      */
     private ?\SplObjectStorage $objectMap = null;
 
-    /**
-     * @param ContainerInterface $transformCallableLocator
-     * @param ContainerInterface $conditionCallableLocator
-     */
     public function __construct(
         private readonly ObjectMapperMetadataFactoryInterface $metadataFactory = new ReflectionObjectMapperMetadataFactory(),
         private readonly ?PropertyAccessorInterface $propertyAccessor = null,
@@ -77,7 +73,7 @@ final class ObjectMapper implements ObjectMapperInterface
             $mappedTarget = $this->applyTransforms($map, $mappedTarget, $mappedTarget);
 
             if (!\is_object($mappedTarget)) {
-                throw new MappingTransformException(sprintf('Cannot map "%s" to a non-object target of type "%s".', get_debug_type($source), get_debug_type($mappedTarget)));
+                throw new MappingTransformException(\sprintf('Cannot map "%s" to a non-object target of type "%s".', get_debug_type($source), get_debug_type($mappedTarget)));
             }
         }
 
