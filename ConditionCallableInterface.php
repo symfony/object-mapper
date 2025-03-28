@@ -24,7 +24,7 @@ interface ConditionCallableInterface
 {
     /**
      * @param mixed $value  The value being mapped
-     * @param T     $object The object we're working on
+     * @param T     $source The object we're working on
      */
-    public function __invoke(mixed $value, object $object): bool;
+    public function __invoke(mixed $value, object $source): bool;
 }
