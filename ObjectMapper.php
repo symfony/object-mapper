@@ -298,7 +298,7 @@ final class ObjectMapper implements ObjectMapperInterface
         }
 
         foreach ($refl->getProperties() as $property) {
-            if ($this->metadataFactory->create($source, $property)) {
+            if ($this->metadataFactory->create($source, $property->getName())) {
                 return $refl;
             }
         }

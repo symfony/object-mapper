@@ -38,6 +38,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Target;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\A as MapTargetToSourceA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\B as MapTargetToSourceB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
@@ -261,5 +263,14 @@ final class ObjectMapperTest extends TestCase
         $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: fn () => new \stdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
+    }
+
+    public function testMapTargetToSource()
+    {
+        $a = new MapTargetToSourceA('str');
+        $mapper = new ObjectMapper();
+        $b = $mapper->map($a, MapTargetToSourceB::class);
+        $this->assertInstanceOf(MapTargetToSourceB::class, $b);
+        $this->assertSame('str', $b->target);
     }
 }
