@@ -15,6 +15,7 @@ namespace Symfony\Component\ObjectMapper;
  * Service used by "Map::if".
  *
  * @template T of object
+ * @template T2 of object
  *
  * @experimental
  *
@@ -25,6 +26,7 @@ interface ConditionCallableInterface
     /**
      * @param mixed $value  The value being mapped
      * @param T     $source The object we're working on
+     * @param T2|null $target The target we're mapping to
      */
-    public function __invoke(mixed $value, object $source): bool;
+    public function __invoke(mixed $value, object $source, ?object $target): bool;
 }

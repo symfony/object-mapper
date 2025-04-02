@@ -40,6 +40,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Target;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\A as MapTargetToSourceA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\B as MapTargetToSourceB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\A as MultipleTargetPropertyA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\B as MultipleTargetPropertyB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as MultipleTargetPropertyC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
@@ -272,5 +275,20 @@ final class ObjectMapperTest extends TestCase
         $b = $mapper->map($a, MapTargetToSourceB::class);
         $this->assertInstanceOf(MapTargetToSourceB::class, $b);
         $this->assertSame('str', $b->target);
+    }
+
+    public function testMultipleTargetMapProperty()
+    {
+        $u = new MultipleTargetPropertyA();
+
+        $mapper = new ObjectMapper();
+        $b = $mapper->map($u, MultipleTargetPropertyB::class);
+        $this->assertInstanceOf(MultipleTargetPropertyB::class, $b);
+        $this->assertEquals($b->foo, 'TEST');
+        $c = $mapper->map($u, MultipleTargetPropertyC::class);
+        $this->assertInstanceOf(MultipleTargetPropertyC::class, $c);
+        $this->assertEquals($c->bar, 'test');
+        $this->assertEquals($c->foo, 'donotmap');
+        $this->assertEquals($c->doesNotExistInTargetB, 'foo');
     }
 }
