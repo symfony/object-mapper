@@ -19,7 +19,7 @@ namespace Symfony\Component\ObjectMapper\Attribute;
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
-readonly class Map
+class Map
 {
     /**
      * @param string|class-string|null                                                                              $source    The property or the class to map from
@@ -28,10 +28,10 @@ readonly class Map
      * @param (string|callable(mixed, object): mixed)|(string|callable(mixed, object): mixed)[]|null $transform A service id or a callable that transforms the value during mapping
      */
     public function __construct(
-        public ?string $target = null,
-        public ?string $source = null,
-        public mixed $if = null,
-        public mixed $transform = null,
+        public readonly ?string $target = null,
+        public readonly ?string $source = null,
+        public readonly mixed $if = null,
+        public readonly mixed $transform = null,
     ) {
     }
 }
