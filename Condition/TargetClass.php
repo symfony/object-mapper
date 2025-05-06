@@ -9,17 +9,26 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator;
+namespace Symfony\Component\ObjectMapper\Condition;
 
 use Symfony\Component\ObjectMapper\ConditionCallableInterface;
 
 /**
- * @implements ConditionCallableInterface<A>
+ * @template T of object
+ *
+ * @implements ConditionCallableInterface<object, T>
  */
-class ConditionCallable implements ConditionCallableInterface
+final class TargetClass implements ConditionCallableInterface
 {
+    /**
+     * @param class-string<T> $className
+     */
+    public function __construct(private readonly string $className)
+    {
+    }
+
     public function __invoke(mixed $value, object $source, ?object $target): bool
     {
-        return 'ok' === $value;
+        return $target instanceof $this->className;
     }
 }

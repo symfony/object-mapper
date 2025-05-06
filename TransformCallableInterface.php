@@ -15,6 +15,7 @@ namespace Symfony\Component\ObjectMapper;
  * Service used by "Map::transform".
  *
  * @template T of object
+ * @template T2 of object
  *
  * @experimental
  *
@@ -25,6 +26,7 @@ interface TransformCallableInterface
     /**
      * @param mixed $value  The value being mapped
      * @param T     $source The object we're working on
+     * @param T2|null $target The target we're mapping to
      */
-    public function __invoke(mixed $value, object $source): mixed;
+    public function __invoke(mixed $value, object $source, ?object $target): mixed;
 }
