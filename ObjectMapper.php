@@ -122,12 +122,12 @@ final class ObjectMapper implements ObjectMapperInterface
                     $sourcePropertyName = $mapping->source;
                 }
 
-                $value = $this->getRawValue($source, $sourcePropertyName);
-                if (($if = $mapping->if) && ($fn = $this->getCallable($if, $this->conditionCallableLocator)) && !$this->call($fn, $value, $source, $mappedTarget)) {
+                if (false === $if = $mapping->if) {
                     continue;
                 }
 
-                if (false === $if) {
+                $value = $this->getRawValue($source, $sourcePropertyName);
+                if ($if && ($fn = $this->getCallable($if, $this->conditionCallableLocator)) && !$this->call($fn, $value, $source, $mappedTarget)) {
                     continue;
                 }
 
