@@ -34,6 +34,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\UserProfile;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\HydrateObject\SourceOnly;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\A as InstanceCallbackA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\B as InstanceCallbackB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\A as InstanceCallbackWithArgumentsA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\B as InstanceCallbackWithArgumentsB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
@@ -153,6 +155,16 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(InstanceCallbackB::class, $b);
         $this->assertSame($b->getId(), 1);
         $this->assertSame($b->name, 'test');
+    }
+
+    public function testMapToWithInstanceHookWithArguments()
+    {
+        $a = new InstanceCallbackWithArgumentsA();
+        $mapper = new ObjectMapper();
+        $b = $mapper->map($a);
+        $this->assertInstanceOf(InstanceCallbackWithArgumentsB::class, $b);
+        $this->assertSame($a, $b->transformSource);
+        $this->assertInstanceOf(InstanceCallbackWithArgumentsB::class, $b->transformValue);
     }
 
     public function testMapStruct()
@@ -284,11 +296,11 @@ final class ObjectMapperTest extends TestCase
         $mapper = new ObjectMapper();
         $b = $mapper->map($u, MultipleTargetPropertyB::class);
         $this->assertInstanceOf(MultipleTargetPropertyB::class, $b);
-        $this->assertEquals($b->foo, 'TEST');
+        $this->assertEquals('TEST', $b->foo);
         $c = $mapper->map($u, MultipleTargetPropertyC::class);
         $this->assertInstanceOf(MultipleTargetPropertyC::class, $c);
-        $this->assertEquals($c->bar, 'test');
-        $this->assertEquals($c->foo, 'donotmap');
-        $this->assertEquals($c->doesNotExistInTargetB, 'foo');
+        $this->assertEquals('test', $c->bar);
+        $this->assertEquals('donotmap', $c->foo);
+        $this->assertEquals('foo', $c->doesNotExistInTargetB);
     }
 }

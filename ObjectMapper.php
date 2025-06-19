@@ -70,7 +70,7 @@ final class ObjectMapper implements ObjectMapperInterface
 
         $mappedTarget = $mappingToObject ? $target : $targetRefl->newInstanceWithoutConstructor();
         if ($map && $map->transform) {
-            $mappedTarget = $this->applyTransforms($map, $mappedTarget, $mappedTarget, null);
+            $mappedTarget = $this->applyTransforms($map, $mappedTarget, $source, null);
 
             if (!\is_object($mappedTarget)) {
                 throw new MappingTransformException(\sprintf('Cannot map "%s" to a non-object target of type "%s".', get_debug_type($source), get_debug_type($mappedTarget)));
