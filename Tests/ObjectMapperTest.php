@@ -284,11 +284,11 @@ final class ObjectMapperTest extends TestCase
         $mapper = new ObjectMapper();
         $b = $mapper->map($u, MultipleTargetPropertyB::class);
         $this->assertInstanceOf(MultipleTargetPropertyB::class, $b);
-        $this->assertEquals($b->foo, 'TEST');
+        $this->assertEquals('TEST', $b->foo);
         $c = $mapper->map($u, MultipleTargetPropertyC::class);
         $this->assertInstanceOf(MultipleTargetPropertyC::class, $c);
-        $this->assertEquals($c->bar, 'test');
-        $this->assertEquals($c->foo, 'donotmap');
-        $this->assertEquals($c->doesNotExistInTargetB, 'foo');
+        $this->assertEquals('test', $c->bar);
+        $this->assertEquals('donotmap', $c->foo);
+        $this->assertEquals('foo', $c->doesNotExistInTargetB);
     }
 }
