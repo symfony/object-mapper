@@ -14,9 +14,11 @@ namespace Symfony\Component\ObjectMapper;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 use Symfony\Component\ObjectMapper\Exception\MappingTransformException;
+use Symfony\Component\ObjectMapper\Exception\NoSuchPropertyException;
 use Symfony\Component\ObjectMapper\Metadata\Mapping;
 use Symfony\Component\ObjectMapper\Metadata\ObjectMapperMetadataFactoryInterface;
 use Symfony\Component\ObjectMapper\Metadata\ReflectionObjectMapperMetadataFactory;
+use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException as PropertyAccessorNoSuchPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 /**
@@ -167,7 +169,19 @@ final class ObjectMapper implements ObjectMapperInterface
 
     private function getRawValue(object $source, string $propertyName): mixed
     {
-        return $this->propertyAccessor ? $this->propertyAccessor->getValue($source, $propertyName) : $source->{$propertyName};
+        if ($this->propertyAccessor) {
+            try {
+                return $this->propertyAccessor->getValue($source, $propertyName);
+            } catch (PropertyAccessorNoSuchPropertyException $e) {
+                throw new NoSuchPropertyException($e->getMessage(), $e->getCode(), $e);
+            }
+        }
+
+        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
+            throw new NoSuchPropertyException(sprintf('The property "%s" does not exist on "%s".', $propertyName, get_debug_type($source)));
+        }
+
+        return $source->{$propertyName};
     }
 
     private function getSourceValue(object $source, object $target, mixed $value, \SplObjectStorage $objectMap, ?Mapping $mapping = null): mixed
