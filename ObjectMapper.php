@@ -146,7 +146,7 @@ final class ObjectMapper implements ObjectMapperInterface
             }
         }
 
-        if (!$mappingToObject && $ctorArguments && $constructor) {
+        if (!$mappingToObject && !$map?->transform && $constructor) {
             try {
                 $mappedTarget->__construct(...$ctorArguments);
             } catch (\ReflectionException $e) {
