@@ -32,6 +32,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\TargetUser;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\User;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\UserProfile;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\HydrateObject\SourceOnly;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\A as InitializedConstructorA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\B as InitializedConstructorB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\A as InstanceCallbackA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\B as InstanceCallbackB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\A as InstanceCallbackWithArgumentsA;
@@ -145,6 +147,15 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame($mapped->relation->recursion, $mapped);
         $this->assertInstanceOf(RecursiveDto::class, $mapped);
         $this->assertInstanceOf(RelationDto::class, $mapped->relation);
+    }
+
+    public function testMapWithInitializedConstructor()
+    {
+        $a = new InitializedConstructorA();
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $b = $mapper->map($a, InitializedConstructorB::class);
+        $this->assertInstanceOf(InitializedConstructorB::class, $b);
+        $this->assertEquals($b->tags, ['foo', 'bar']);
     }
 
     public function testMapToWithInstanceHook()
