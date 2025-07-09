@@ -13,6 +13,7 @@ namespace Symfony\Component\ObjectMapper;
 
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 use Symfony\Component\ObjectMapper\Exception\MappingTransformException;
+use Symfony\Component\ObjectMapper\Exception\NoSuchPropertyException;
 
 /**
  * Object to object mapper.
@@ -33,6 +34,7 @@ interface ObjectMapperInterface
      *
      * @throws MappingException          When the mapping configuration is wrong
      * @throws MappingTransformException When a transformation on an object does not return an object
+     * @throws NoSuchPropertyException   When a property does not exist
      */
     public function map(object $source, object|string|null $target = null): object;
 }
