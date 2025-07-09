@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 use Symfony\Component\ObjectMapper\Exception\MappingTransformException;
+use Symfony\Component\ObjectMapper\Exception\NoSuchPropertyException;
 use Symfony\Component\ObjectMapper\Metadata\Mapping;
 use Symfony\Component\ObjectMapper\Metadata\ObjectMapperMetadataFactoryInterface;
 use Symfony\Component\ObjectMapper\Metadata\ReflectionObjectMapperMetadataFactory;
@@ -28,6 +29,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\Recursive;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\RecursiveDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\Relation;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\RelationDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\DefaultValueStdClass\TargetDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\TargetUser;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\User;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\UserProfile;
@@ -247,8 +249,17 @@ final class ObjectMapperTest extends TestCase
         $mapped = $mapper->map($a, SourceOnly::class);
         $this->assertInstanceOf(SourceOnly::class, $mapped);
         $this->assertSame('test', $mapped->mappedName);
+    }
 
+    public function testSourceOnlyWithMagicMethods()
+    {
+        $mapper = new ObjectMapper();
         $a = new class {
+            public function __isset($key): bool
+            {
+                return 'name' === $key;
+            }
+
             public function __get(string $key): string
             {
                 return match ($key) {
@@ -313,5 +324,25 @@ final class ObjectMapperTest extends TestCase
         $this->assertEquals('test', $c->bar);
         $this->assertEquals('donotmap', $c->foo);
         $this->assertEquals('foo', $c->doesNotExistInTargetB);
+    }
+
+    public function testDefaultValueStdClass()
+    {
+        $this->expectException(NoSuchPropertyException::class);
+        $u = new \stdClass();
+        $u->id = 'abc';
+        $mapper = new ObjectMapper();
+        $b = $mapper->map($u, TargetDto::class);
+    }
+
+    public function testDefaultValueStdClassWithPropertyInfo()
+    {
+        $u = new \stdClass();
+        $u->id = 'abc';
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor());
+        $b = $mapper->map($u, TargetDto::class);
+        $this->assertInstanceOf(TargetDto::class, $b);
+        $this->assertSame('abc', $b->id);
+        $this->assertNull($b->optional);
     }
 }
