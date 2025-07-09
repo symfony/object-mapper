@@ -24,8 +24,8 @@ namespace Symfony\Component\ObjectMapper;
 interface ConditionCallableInterface
 {
     /**
-     * @param mixed $value  The value being mapped
-     * @param T     $source The object we're working on
+     * @param mixed   $value  The value being mapped
+     * @param T       $source The object we're working on
      * @param T2|null $target The target we're mapping to
      */
     public function __invoke(mixed $value, object $source, ?object $target): bool;
