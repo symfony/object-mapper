@@ -22,8 +22,8 @@ namespace Symfony\Component\ObjectMapper\Attribute;
 class Map
 {
     /**
-     * @param string|class-string|null                                                                              $source    The property or the class to map from
-     * @param string|class-string|null                                                                              $target    The property or the class to map to
+     * @param string|class-string|null                                                               $source    The property or the class to map from
+     * @param string|class-string|null                                                               $target    The property or the class to map to
      * @param string|bool|callable(mixed, object): bool|null                                         $if        A boolean, a service id or a callable that instructs whether to map
      * @param (string|callable(mixed, object): mixed)|(string|callable(mixed, object): mixed)[]|null $transform A service id or a callable that transforms the value during mapping
      */
