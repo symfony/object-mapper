@@ -178,7 +178,7 @@ final class ObjectMapper implements ObjectMapperInterface
         }
 
         if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
-            throw new NoSuchPropertyException(sprintf('The property "%s" does not exist on "%s".', $propertyName, get_debug_type($source)));
+            throw new NoSuchPropertyException(\sprintf('The property "%s" does not exist on "%s".', $propertyName, get_debug_type($source)));
         }
 
         return $source->{$propertyName};
