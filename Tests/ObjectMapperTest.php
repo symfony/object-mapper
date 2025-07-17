@@ -368,4 +368,46 @@ final class ObjectMapperTest extends TestCase
         yield [new ObjectMapper()];
         yield [new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor())];
     }
+
+    public function testDecorateObjectMapper()
+    {
+        $mapper = new ObjectMapper();
+        $myMapper = new class($mapper) implements ObjectMapperInterface {
+            private ?\SplObjectStorage $embededMap = null;
+
+            public function __construct(private readonly ObjectMapperInterface $mapper)
+            {
+                $this->embededMap = new \SplObjectStorage();
+            }
+
+            public function map(object $source, object|string|null $target = null): object
+            {
+                if (isset($this->embededMap[$source])) {
+                    $target = $this->embededMap[$source];
+                }
+
+                $mapped = $this->mapper->map($source, $target);
+                $this->embededMap[$source] = $mapped;
+
+                return $mapped;
+            }
+        };
+
+        $mapper = $mapper->withObjectMapper($myMapper);
+
+        $d = new D(baz: 'foo', bat: 'bar');
+        $c = new C(foo: 'foo', bar: 'bar');
+        $myNewD = $myMapper->map($c);
+
+        $a = new A();
+        $a->foo = 'test';
+        $a->transform = 'test';
+        $a->baz = 'me';
+        $a->notinb = 'test';
+        $a->relation = $c;
+        $a->relationNotMapped = $d;
+
+        $b = $mapper->map($a);
+        $this->assertSame($myNewD, $b->relation);
+    }
 }
