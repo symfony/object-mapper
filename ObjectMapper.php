@@ -156,6 +156,14 @@ final class ObjectMapper implements ObjectMapperInterface
             }
         }
 
+        if ($mappingToObject && $ctorArguments) {
+            foreach ($ctorArguments as $property => $value) {
+                if ($targetRefl->hasProperty($property) && $targetRefl->getProperty($property)->isPublic()) {
+                    $mapToProperties[$property] = $value;
+                }
+            }
+        }
+
         foreach ($mapToProperties as $property => $value) {
             $this->propertyAccessor ? $this->propertyAccessor->setValue($mappedTarget, $property, $value) : ($mappedTarget->{$property} = $value);
         }
