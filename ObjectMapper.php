@@ -20,6 +20,7 @@ use Symfony\Component\ObjectMapper\Metadata\ObjectMapperMetadataFactoryInterface
 use Symfony\Component\ObjectMapper\Metadata\ReflectionObjectMapperMetadataFactory;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException as PropertyAccessorNoSuchPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\VarExporter\LazyObjectInterface;
 
 /**
  * Object to object mapper.
@@ -313,6 +314,12 @@ final class ObjectMapper implements ObjectMapperInterface
             $refl = new \ReflectionClass($source);
         } catch (\ReflectionException $e) {
             throw new MappingException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        if ($source instanceof LazyObjectInterface) {
+            $source->initializeLazyObject();
+        } elseif (\PHP_VERSION_ID >= 80400 && $refl->isUninitializedLazyObject($source)) {
+            $refl->initializeLazyObject($source);
         }
 
         if ($metadata) {

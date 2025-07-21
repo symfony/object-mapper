@@ -20,7 +20,8 @@
         "psr/container": "^2.0"
     },
     "require-dev": {
-        "symfony/property-access": "^7.2"
+        "symfony/property-access": "^7.2",
+        "symfony/var-exporter": "^7.2"
     },
     "autoload": {
         "psr-4": {

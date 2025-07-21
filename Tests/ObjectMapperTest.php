@@ -41,6 +41,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\A as Instance
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\B as InstanceCallbackB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\A as InstanceCallbackWithArgumentsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\B as InstanceCallbackWithArgumentsB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\LazyFoo;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
@@ -52,6 +53,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\B as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as MultipleTargetPropertyC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MyProxy;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
@@ -367,5 +369,37 @@ final class ObjectMapperTest extends TestCase
     {
         yield [new ObjectMapper()];
         yield [new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor())];
+    }
+
+    public function testMapInitializesLazyObject()
+    {
+        $lazy = new LazyFoo();
+        $mapper = new ObjectMapper();
+        $mapper->map($lazy, \stdClass::class);
+        $this->assertTrue($lazy->isLazyObjectInitialized());
+    }
+
+    /**
+     * @requires PHP 8.4
+     */
+    public function testMapInitializesNativePhp84LazyObject()
+    {
+        $initialized = false;
+        $initializer = function () use (&$initialized) {
+            $initialized = true;
+
+            $p = new MyProxy();
+            $p->name = 'test';
+
+            return $p;
+        };
+
+        $r = new \ReflectionClass(MyProxy::class);
+        $lazyObj = $r->newLazyProxy($initializer);
+        $this->assertFalse($initialized);
+        $mapper = new ObjectMapper();
+        $d = $mapper->map($lazyObj, MyProxy::class);
+        $this->assertSame('test', $d->name);
+        $this->assertTrue($initialized);
     }
 }
