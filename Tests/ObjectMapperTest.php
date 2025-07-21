@@ -20,6 +20,7 @@ use Symfony\Component\ObjectMapper\Metadata\Mapping;
 use Symfony\Component\ObjectMapper\Metadata\ObjectMapperMetadataFactoryInterface;
 use Symfony\Component\ObjectMapper\Metadata\ReflectionObjectMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\ObjectMapper;
+use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\A;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\B;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\C;
@@ -51,6 +52,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\B as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as MultipleTargetPropertyC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\A as ServiceLocatorA;
@@ -344,5 +347,67 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(TargetDto::class, $b);
         $this->assertSame('abc', $b->id);
         $this->assertNull($b->optional);
+    }
+
+    /**
+     * @dataProvider objectMapperProvider
+     */
+    public function testUpdateObjectWithConstructorPromotedProperties(ObjectMapperInterface $mapper)
+    {
+        $a = new PromotedConstructorSource(1, 'foo');
+        $b = new PromotedConstructorTarget(1, 'bar');
+        $v = $mapper->map($a, $b);
+        $this->assertSame($v->name, 'foo');
+    }
+
+    /**
+     * @return iterable<array{0: ObjectMapperInterface}>
+     */
+    public static function objectMapperProvider(): iterable
+    {
+        yield [new ObjectMapper()];
+        yield [new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor())];
+    }
+
+    public function testDecorateObjectMapper()
+    {
+        $mapper = new ObjectMapper();
+        $myMapper = new class($mapper) implements ObjectMapperInterface {
+            private ?\SplObjectStorage $embededMap = null;
+
+            public function __construct(private readonly ObjectMapperInterface $mapper)
+            {
+                $this->embededMap = new \SplObjectStorage();
+            }
+
+            public function map(object $source, object|string|null $target = null): object
+            {
+                if (isset($this->embededMap[$source])) {
+                    $target = $this->embededMap[$source];
+                }
+
+                $mapped = $this->mapper->map($source, $target);
+                $this->embededMap[$source] = $mapped;
+
+                return $mapped;
+            }
+        };
+
+        $mapper = $mapper->withObjectMapper($myMapper);
+
+        $d = new D(baz: 'foo', bat: 'bar');
+        $c = new C(foo: 'foo', bar: 'bar');
+        $myNewD = $myMapper->map($c);
+
+        $a = new A();
+        $a->foo = 'test';
+        $a->transform = 'test';
+        $a->baz = 'me';
+        $a->notinb = 'test';
+        $a->relation = $c;
+        $a->relationNotMapped = $d;
+
+        $b = $mapper->map($a);
+        $this->assertSame($myNewD, $b->relation);
     }
 }

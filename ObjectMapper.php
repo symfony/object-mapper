@@ -28,7 +28,7 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
  *
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
-final class ObjectMapper implements ObjectMapperInterface
+final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInterface
 {
     /**
      * Tracks recursive references.
@@ -40,6 +40,7 @@ final class ObjectMapper implements ObjectMapperInterface
         private readonly ?PropertyAccessorInterface $propertyAccessor = null,
         private readonly ?ContainerInterface $transformCallableLocator = null,
         private readonly ?ContainerInterface $conditionCallableLocator = null,
+        private ?ObjectMapperInterface $objectMapper = null,
     ) {
     }
 
@@ -156,6 +157,14 @@ final class ObjectMapper implements ObjectMapperInterface
             }
         }
 
+        if ($mappingToObject && $ctorArguments) {
+            foreach ($ctorArguments as $property => $value) {
+                if ($targetRefl->hasProperty($property) && $targetRefl->getProperty($property)->isPublic()) {
+                    $mapToProperties[$property] = $value;
+                }
+            }
+        }
+
         foreach ($mapToProperties as $property => $value) {
             $this->propertyAccessor ? $this->propertyAccessor->setValue($mappedTarget, $property, $value) : ($mappedTarget->{$property} = $value);
         }
@@ -203,7 +212,7 @@ final class ObjectMapper implements ObjectMapperInterface
             } elseif ($objectMap->contains($value)) {
                 $value = $objectMap[$value];
             } else {
-                $value = $this->map($value, $mapTo->target);
+                $value = ($this->objectMapper ?? $this)->map($value, $mapTo->target);
             }
         }
 
@@ -318,5 +327,13 @@ final class ObjectMapper implements ObjectMapperInterface
         }
 
         return $targetRefl;
+    }
+
+    public function withObjectMapper(ObjectMapperInterface $objectMapper): static
+    {
+        $clone = clone $this;
+        $clone->objectMapper = $objectMapper;
+
+        return $clone;
     }
 }
