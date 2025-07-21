@@ -319,7 +319,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         if ($source instanceof LazyObjectInterface) {
             $source->initializeLazyObject();
-        } elseif (\PHP_VERSION_ID >= 80400 && $refl->isUninitializedLazyObject($source)) {
+        } elseif ($refl->isUninitializedLazyObject($source)) {
             $refl->initializeLazyObject($source);
         }
 

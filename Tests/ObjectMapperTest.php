@@ -379,9 +379,6 @@ final class ObjectMapperTest extends TestCase
         $this->assertTrue($lazy->isLazyObjectInitialized());
     }
 
-    /**
-     * @requires PHP 8.4
-     */
     public function testMapInitializesNativePhp84LazyObject()
     {
         $initialized = false;
