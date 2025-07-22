@@ -371,6 +371,9 @@ final class ObjectMapperTest extends TestCase
         yield [new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor())];
     }
 
+    /**
+     * @group legacy
+     */
     public function testMapInitializesLazyObject()
     {
         $lazy = new LazyFoo();
