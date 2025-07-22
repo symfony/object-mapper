@@ -11,12 +11,28 @@
 
 namespace Symfony\Component\ObjectMapper\Tests\Fixtures;
 
-use Symfony\Component\VarExporter\LazyGhostTrait;
 use Symfony\Component\VarExporter\LazyObjectInterface;
 
 class LazyFoo extends \stdClass implements LazyObjectInterface
 {
-    use LazyGhostTrait;
+    private bool $initialized = false;
 
-    public string $name = 'foo';
+    public function isLazyObjectInitialized(bool $partial = false): bool
+    {
+        return $this->initialized;
+    }
+
+    public function initializeLazyObject(): object
+    {
+        $this->initialized = true;
+
+        return $this;
+    }
+
+    public function resetLazyObject(): bool
+    {
+        $this->initialized = false;
+
+        return true;
+    }
 }
