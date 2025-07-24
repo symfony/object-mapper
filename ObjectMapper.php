@@ -144,6 +144,11 @@ final class ObjectMapper implements ObjectMapperInterface
             }
 
             if (!$mappings && $targetRefl->hasProperty($propertyName)) {
+                $sourceProperty = $refl->getProperty($propertyName);
+                if ($refl->isInstance($source) && !$sourceProperty->isInitialized($source)) {
+                    continue;
+                }
+
                 $value = $this->getSourceValue($source, $mappedTarget, $this->getRawValue($source, $propertyName), $this->objectMap);
                 $this->storeValue($propertyName, $mapToProperties, $ctorArguments, $value);
             }
