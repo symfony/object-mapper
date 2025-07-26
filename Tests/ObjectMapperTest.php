@@ -54,6 +54,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MyProxy;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
@@ -446,5 +448,48 @@ final class ObjectMapperTest extends TestCase
 
         $b = $mapper->map($a);
         $this->assertSame($myNewD, $b->relation);
+    }
+
+    /**
+     * @dataProvider validPartialInputProvider
+     */
+    public function testMapPartially(PartialInput $actual, FinalInput $expected)
+    {
+        $mapper = new ObjectMapper();
+        $this->assertEquals($expected, $mapper->map($actual));
+    }
+
+    public static function validPartialInputProvider(): iterable
+    {
+        $p = new PartialInput();
+        $p->uuid = '6a9eb6dd-c4dc-4746-bb99-f6bad716acb2';
+        $p->website = 'https://updated.website.com';
+
+        $f = new FinalInput();
+        $f->uuid = $p->uuid;
+        $f->website = $p->website;
+
+        yield [$p, $f];
+
+        $p = new PartialInput();
+        $p->uuid = '6a9eb6dd-c4dc-4746-bb99-f6bad716acb2';
+        $p->website = null;
+
+        $f = new FinalInput();
+        $f->uuid = $p->uuid;
+
+        yield [$p, $f];
+
+        $p = new PartialInput();
+        $p->uuid = '6a9eb6dd-c4dc-4746-bb99-f6bad716acb2';
+        $p->website = 'https://updated.website.com';
+        $p->email = 'updated@email.com';
+
+        $f = new FinalInput();
+        $f->uuid = $p->uuid;
+        $f->website = $p->website;
+        $f->email = $p->email;
+
+        yield [$p, $f];
     }
 }
