@@ -11,8 +11,10 @@
 
 namespace Symfony\Component\ObjectMapper\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
@@ -70,9 +72,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
 {
-    /**
-     * @dataProvider mapProvider
-     */
+    #[DataProvider('mapProvider')]
     public function testMap($expect, $args, array $deps = [])
     {
         $mapper = new ObjectMapper(...$deps);
@@ -355,9 +355,7 @@ final class ObjectMapperTest extends TestCase
         $this->assertNull($b->optional);
     }
 
-    /**
-     * @dataProvider objectMapperProvider
-     */
+    #[DataProvider('objectMapperProvider')]
     public function testUpdateObjectWithConstructorPromotedProperties(ObjectMapperInterface $mapper)
     {
         $a = new PromotedConstructorSource(1, 'foo');
@@ -385,9 +383,7 @@ final class ObjectMapperTest extends TestCase
         $this->assertTrue($lazy->isLazyObjectInitialized());
     }
 
-    /**
-     * @requires PHP 8.4
-     */
+    #[RequiresPhp('8.4')]
     public function testMapInitializesNativePhp84LazyObject()
     {
         $initialized = false;
@@ -451,9 +447,7 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame($myNewD, $b->relation);
     }
 
-    /**
-     * @dataProvider validPartialInputProvider
-     */
+    #[DataProvider('validPartialInputProvider')]
     public function testMapPartially(PartialInput $actual, FinalInput $expected)
     {
         $mapper = new ObjectMapper();
