@@ -64,6 +64,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\A as ServiceLoc
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\B as ServiceLocatorB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\ConditionCallable;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\TransformCallable;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\SourceEntity;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\TargetDto as TargetTransformTargetDto;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
@@ -446,5 +448,18 @@ final class ObjectMapperTest extends TestCase
         $f->email = $p->email;
 
         yield [$p, $f];
+    }
+
+    public function testMapWithSourceTransform()
+    {
+        $source = new SourceEntity();
+        $source->name = 'test';
+
+        $mapper = new ObjectMapper();
+        $target = $mapper->map($source, TargetTransformTargetDto::class);
+
+        $this->assertInstanceOf(TargetTransformTargetDto::class, $target);
+        $this->assertTrue($target->transformed);
+        $this->assertSame('test', $target->name);
     }
 }

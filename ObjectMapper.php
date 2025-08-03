@@ -72,6 +72,12 @@ final class ObjectMapper implements ObjectMapperInterface
         }
 
         $mappedTarget = $mappingToObject ? $target : $targetRefl->newInstanceWithoutConstructor();
+
+        if (!$metadata && ($targetMetadata = $this->metadataFactory->create($mappedTarget))) {
+            $metadata = $targetMetadata;
+            $map = $this->getMapTarget($metadata, null, $source, null);
+        }
+
         if ($map && $map->transform) {
             $mappedTarget = $this->applyTransforms($map, $mappedTarget, $source, null);
 
