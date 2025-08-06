@@ -58,6 +58,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Source as PromotedConstructorWithMetadataSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Target as PromotedConstructorWithMetadataTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\A as ServiceLocatorA;
@@ -364,6 +366,20 @@ final class ObjectMapperTest extends TestCase
         $b = new PromotedConstructorTarget(1, 'bar');
         $v = $mapper->map($a, $b);
         $this->assertSame($v->name, 'foo');
+    }
+
+    /**
+     * @dataProvider objectMapperProvider
+     */
+    public function testUpdateMappedObjectWithAdditionalConstructorPromotedProperties(ObjectMapperInterface $mapper)
+    {
+        $a = new PromotedConstructorWithMetadataSource(3, 'foo-will-get-updated');
+        $b = new PromotedConstructorWithMetadataTarget('notOnSourceButRequired', 1, 'bar');
+
+        $v = $mapper->map($a, $b);
+
+        $this->assertSame($v->name, $a->name);
+        $this->assertSame($v->number, $a->number);
     }
 
     /**
