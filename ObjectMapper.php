@@ -73,6 +73,12 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         $mappedTarget = $mappingToObject ? $target : $targetRefl->newInstanceWithoutConstructor();
+
+        if (!$metadata && $targetMetadata = $this->metadataFactory->create($mappedTarget)) {
+            $metadata = $targetMetadata;
+            $map = $this->getMapTarget($metadata, null, $source, null);
+        }
+
         if ($map && $map->transform) {
             $mappedTarget = $this->applyTransforms($map, $mappedTarget, $source, null);
 
@@ -105,7 +111,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         $readMetadataFrom = $source;
-        $refl = $this->getSourceReflectionClass($source, $targetRefl);
+        $refl = $this->getSourceReflectionClass($source) ?? $targetRefl;
 
         // When source contains no metadata, we read metadata on the target instead
         if ($refl === $targetRefl) {
@@ -165,7 +171,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         if ($mappingToObject && $ctorArguments) {
             foreach ($ctorArguments as $property => $value) {
-                if ($targetRefl->hasProperty($property) && $targetRefl->getProperty($property)->isPublic()) {
+                if ($this->propertyIsMappable($refl, $property) && $this->propertyIsMappable($targetRefl, $property)) {
                     $mapToProperties[$property] = $value;
                 }
             }
@@ -309,11 +315,9 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     }
 
     /**
-     * @param \ReflectionClass<object> $targetRefl
-     *
-     * @return \ReflectionClass<object|T>
+     * @return ?\ReflectionClass<object|T>
      */
-    private function getSourceReflectionClass(object $source, \ReflectionClass $targetRefl): \ReflectionClass
+    private function getSourceReflectionClass(object $source): ?\ReflectionClass
     {
         $metadata = $this->metadataFactory->create($source);
         try {
@@ -338,7 +342,12 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             }
         }
 
-        return $targetRefl;
+        return null;
+    }
+
+    private function propertyIsMappable(\ReflectionClass $targetRefl, int|string $property): bool
+    {
+        return $targetRefl->hasProperty($property) && $targetRefl->getProperty($property)->isPublic();
     }
 
     public function withObjectMapper(ObjectMapperInterface $objectMapper): static
