@@ -367,9 +367,7 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame($v->name, 'foo');
     }
 
-    /**
-     * @dataProvider objectMapperProvider
-     */
+    #[DataProvider('objectMapperProvider')]
     public function testUpdateMappedObjectWithAdditionalConstructorPromotedProperties(ObjectMapperInterface $mapper)
     {
         $a = new PromotedConstructorWithMetadataSource(3, 'foo-will-get-updated');
