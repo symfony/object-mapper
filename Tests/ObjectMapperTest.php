@@ -61,12 +61,16 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Source as PromotedConstructorWithMetadataSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Target as PromotedConstructorWithMetadataTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\A as ServiceLocatorA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\B as ServiceLocatorB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\ConditionCallable;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\TransformCallable;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\SourceEntity;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\TargetDto as TargetTransformTargetDto;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
@@ -364,6 +368,20 @@ final class ObjectMapperTest extends TestCase
     }
 
     /**
+     * @dataProvider objectMapperProvider
+     */
+    public function testUpdateMappedObjectWithAdditionalConstructorPromotedProperties(ObjectMapperInterface $mapper)
+    {
+        $a = new PromotedConstructorWithMetadataSource(3, 'foo-will-get-updated');
+        $b = new PromotedConstructorWithMetadataTarget('notOnSourceButRequired', 1, 'bar');
+
+        $v = $mapper->map($a, $b);
+
+        $this->assertSame($v->name, $a->name);
+        $this->assertSame($v->number, $a->number);
+    }
+
+    /**
      * @return iterable<array{0: ObjectMapperInterface}>
      */
     public static function objectMapperProvider(): iterable
@@ -484,5 +502,18 @@ final class ObjectMapperTest extends TestCase
         $f->email = $p->email;
 
         yield [$p, $f];
+    }
+
+    public function testMapWithSourceTransform()
+    {
+        $source = new SourceEntity();
+        $source->name = 'test';
+
+        $mapper = new ObjectMapper();
+        $target = $mapper->map($source, TargetTransformTargetDto::class);
+
+        $this->assertInstanceOf(TargetTransformTargetDto::class, $target);
+        $this->assertTrue($target->transformed);
+        $this->assertSame('test', $target->name);
     }
 }
