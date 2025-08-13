@@ -220,7 +220,7 @@ final class ObjectMapper implements ObjectMapperInterface
 
             if ($value === $source) {
                 $value = $target;
-            } elseif ($objectMap->contains($value)) {
+            } elseif ($objectMap->offsetExists($value)) {
                 $value = $objectMap[$value];
             } else {
                 $value = $this->map($value, $mapTo->target);
