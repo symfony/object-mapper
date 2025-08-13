@@ -221,7 +221,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
             if ($value === $source) {
                 $value = $target;
-            } elseif ($objectMap->contains($value)) {
+            } elseif ($objectMap->offsetExists($value)) {
                 $value = $objectMap[$value];
             } else {
                 $value = ($this->objectMapper ?? $this)->map($value, $mapTo->target);
