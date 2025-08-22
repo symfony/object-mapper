@@ -12,8 +12,6 @@
 namespace Symfony\Component\ObjectMapper;
 
 /**
- * @experimental
- *
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
 interface ObjectMapperAwareInterface

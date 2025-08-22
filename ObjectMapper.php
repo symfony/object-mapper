@@ -25,8 +25,6 @@ use Symfony\Component\VarExporter\LazyObjectInterface;
 /**
  * Object to object mapper.
  *
- * @experimental
- *
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
 final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInterface
