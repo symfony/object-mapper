@@ -71,6 +71,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\ConditionCallab
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\TransformCallable;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\SourceEntity;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\TargetDto as TargetTransformTargetDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionD;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
@@ -513,5 +517,16 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(TargetTransformTargetDto::class, $target);
         $this->assertTrue($target->transformed);
         $this->assertSame('test', $target->name);
+    }
+
+    public function testTransformCollection()
+    {
+        $u = new TransformCollectionA();
+        $u->foo = [new TransformCollectionC('a'), new TransformCollectionC('b')];
+        $mapper = new ObjectMapper();
+
+        $transformed = $mapper->map($u, TransformCollectionB::class);
+
+        $this->assertEquals([new TransformCollectionD('a'), new TransformCollectionD('b')], $transformed->foo);
     }
 }
