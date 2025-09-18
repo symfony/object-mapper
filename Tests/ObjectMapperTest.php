@@ -37,6 +37,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\UserProfile;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\HydrateObject\SourceOnly;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\A as InitializedConstructorA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\B as InitializedConstructorB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\C as InitializedConstructorC;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\InitializedConstructor\D as InitializedConstructorD;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\A as InstanceCallbackA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\B as InstanceCallbackB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\A as InstanceCallbackWithArgumentsA;
@@ -169,6 +171,36 @@ final class ObjectMapperTest extends TestCase
         $b = $mapper->map($a, InitializedConstructorB::class);
         $this->assertInstanceOf(InitializedConstructorB::class, $b);
         $this->assertEquals($b->tags, ['foo', 'bar']);
+    }
+
+    public function testMapReliesOnConstructorsOwnInitialization()
+    {
+        $expected = 'bar';
+
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+
+        $source = new \stdClass();
+        $source->bar = $expected;
+
+        $c = $mapper->map($source, InitializedConstructorC::class);
+
+        $this->assertInstanceOf(InitializedConstructorC::class, $c);
+        $this->assertEquals($expected, $c->bar);
+    }
+
+    public function testMapConstructorArgumentsDifferFromClassFields()
+    {
+        $expected = 'bar';
+
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+
+        $source = new \stdClass();
+        $source->bar = $expected;
+
+        $actual = $mapper->map($source, InitializedConstructorD::class);
+
+        $this->assertInstanceOf(InitializedConstructorD::class, $actual);
+        $this->assertStringContainsStringIgnoringCase($expected, $actual->barUpperCase);
     }
 
     public function testMapToWithInstanceHook()
