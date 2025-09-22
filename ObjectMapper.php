@@ -91,21 +91,23 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         $this->objectMap[$source] = $mappedTarget;
         $ctorArguments = [];
-        $constructor = $targetRefl->getConstructor();
-        foreach ($constructor?->getParameters() ?? [] as $parameter) {
-            if (!$parameter->isPromoted()) {
-                continue;
-            }
-
+        $targetConstructor = $targetRefl->getConstructor();
+        foreach ($targetConstructor?->getParameters() ?? [] as $parameter) {
             $parameterName = $parameter->getName();
-            $property = $targetRefl->getProperty($parameterName);
 
-            if ($property->isReadOnly() && $property->isInitialized($mappedTarget)) {
-                continue;
+            if ($targetRefl->hasProperty($parameterName)) {
+                $property = $targetRefl->getProperty($parameterName);
+
+                if ($property->isReadOnly() && $property->isInitialized($mappedTarget)) {
+                    continue;
+                }
             }
 
-            // this may be filled later on see storeValue
-            $ctorArguments[$parameterName] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+            if ($this->isReadable($source, $parameterName)) {
+                $ctorArguments[$parameterName] = $this->getRawValue($source, $parameterName);
+            } else {
+                $ctorArguments[$parameterName] = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
+            }
         }
 
         $readMetadataFrom = $source;
@@ -159,7 +161,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             }
         }
 
-        if (!$mappingToObject && !$map?->transform && $constructor) {
+        if (!$mappingToObject && !$map?->transform && $targetConstructor) {
             try {
                 $mappedTarget->__construct(...$ctorArguments);
             } catch (\ReflectionException $e) {
@@ -184,6 +186,19 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         return $mappedTarget;
+    }
+
+    private function isReadable(object $source, string $propertyName): bool
+    {
+        if ($this->propertyAccessor) {
+            return $this->propertyAccessor->isReadable($source, $propertyName);
+        }
+
+        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
+            return false;
+        }
+
+        return true;
     }
 
     private function getRawValue(object $source, string $propertyName): mixed
