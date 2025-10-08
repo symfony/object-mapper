@@ -12,8 +12,6 @@
 namespace Symfony\Component\ObjectMapper\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
@@ -424,8 +422,6 @@ final class ObjectMapperTest extends TestCase
         yield [new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor())];
     }
 
-    #[IgnoreDeprecations]
-    #[Group('legacy')]
     public function testMapInitializesLazyObject()
     {
         $lazy = new LazyFoo();
