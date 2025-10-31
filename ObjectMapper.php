@@ -32,7 +32,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     /**
      * Tracks recursive references.
      */
-    private ?\SplObjectStorage $objectMap = null;
+    private ?\WeakMap $objectMap = null;
 
     public function __construct(
         private readonly ObjectMapperMetadataFactoryInterface $metadataFactory = new ReflectionObjectMapperMetadataFactory(),
@@ -45,12 +45,20 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
     public function map(object $source, object|string|null $target = null): object
     {
-        $objectMapInitialized = false;
-        if (null === $this->objectMap) {
-            $this->objectMap = new \SplObjectStorage();
-            $objectMapInitialized = true;
+        if ($this->objectMap) {
+            return $this->doMap($source, $target, $this->objectMap, false);
         }
 
+        $this->objectMap = new \WeakMap();
+        try {
+            return $this->doMap($source, $target, $this->objectMap, true);
+        } finally {
+            $this->objectMap = null;
+        }
+    }
+
+    private function doMap(object $source, object|string|null $target, \WeakMap $objectMap, bool $rootCall): object
+    {
         $metadata = $this->metadataFactory->create($source);
         $map = $this->getMapTarget($metadata, null, $source, null);
         $target ??= $map?->target;
@@ -89,7 +97,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             throw new MappingException(\sprintf('Expected the mapped object to be an instance of "%s" but got "%s".', $targetRefl->getName(), get_debug_type($mappedTarget)));
         }
 
-        $this->objectMap[$source] = $mappedTarget;
+        $objectMap[$source] = $mappedTarget;
         $ctorArguments = [];
         $targetConstructor = $targetRefl->getConstructor();
         foreach ($targetConstructor?->getParameters() ?? [] as $parameter) {
@@ -146,7 +154,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     continue;
                 }
 
-                $value = $this->getSourceValue($source, $mappedTarget, $value, $this->objectMap, $mapping);
+                $value = $this->getSourceValue($source, $mappedTarget, $value, $objectMap, $mapping);
                 $this->storeValue($targetPropertyName, $mapToProperties, $ctorArguments, $value);
             }
 
@@ -156,12 +164,12 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     continue;
                 }
 
-                $value = $this->getSourceValue($source, $mappedTarget, $this->getRawValue($source, $propertyName), $this->objectMap);
+                $value = $this->getSourceValue($source, $mappedTarget, $this->getRawValue($source, $propertyName), $objectMap);
                 $this->storeValue($propertyName, $mapToProperties, $ctorArguments, $value);
             }
         }
 
-        if (!$mappingToObject && !$map?->transform && $targetConstructor) {
+        if ((!$mappingToObject || !$rootCall) && !$map?->transform && $targetConstructor) {
             try {
                 $mappedTarget->__construct(...$ctorArguments);
             } catch (\ReflectionException $e) {
@@ -179,10 +187,6 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         foreach ($mapToProperties as $property => $value) {
             $this->propertyAccessor ? $this->propertyAccessor->setValue($mappedTarget, $property, $value) : ($mappedTarget->{$property} = $value);
-        }
-
-        if ($objectMapInitialized) {
-            $this->objectMap = null;
         }
 
         return $mappedTarget;
@@ -218,7 +222,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         return $source->{$propertyName};
     }
 
-    private function getSourceValue(object $source, object $target, mixed $value, \SplObjectStorage $objectMap, ?Mapping $mapping = null): mixed
+    private function getSourceValue(object $source, object $target, mixed $value, \WeakMap $objectMap, ?Mapping $mapping = null): mixed
     {
         if ($mapping?->transform) {
             $value = $this->applyTransforms($mapping, $value, $source, $target);
@@ -236,8 +240,21 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 $value = $target;
             } elseif ($objectMap->offsetExists($value)) {
                 $value = $objectMap[$value];
+            } elseif (\PHP_VERSION_ID < 80400) {
+                return ($this->objectMapper ?? $this)->map($value, $mapTo->target);
             } else {
-                $value = ($this->objectMapper ?? $this)->map($value, $mapTo->target);
+                $refl = new \ReflectionClass($mapTo->target);
+                $mapper = $this->objectMapper ?? $this;
+
+                return $refl->newLazyGhost(function ($target) use ($mapper, $value, $objectMap) {
+                    $previousMap = $this->objectMap;
+                    $this->objectMap = $objectMap;
+                    try {
+                        $objectMap[$value] = $mapper->map($value, $target);
+                    } finally {
+                        $this->objectMap = $previousMap;
+                    }
+                });
             }
         }
 
