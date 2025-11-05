@@ -89,7 +89,7 @@ final class ObjectMapperTest extends TestCase
         $mapper = new ObjectMapper(...$deps);
         $mapped = $mapper->map(...$args);
 
-        if (\PHP_VERSION_ID >= 80400 && isset($mapped->relation) && $mapped->relation instanceof D ) {
+        if (isset($mapped->relation) && $mapped->relation instanceof D ) {
             $mapped->relation->baz;
         }
 
@@ -564,7 +564,6 @@ final class ObjectMapperTest extends TestCase
         $this->assertEquals([new TransformCollectionD('a'), new TransformCollectionD('b')], $transformed->foo);
     }
 
-    #[RequiresPhp('>=8.4')]
     public function testEmbedsAreLazyLoadedByDefault()
     {
         $mapper = new ObjectMapper();
