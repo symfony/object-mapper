@@ -70,6 +70,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadat
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Target as PromotedConstructorWithMetadataTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\LoadedValueService;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\ServiceLoadedValueTransformer;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\ValueToMap;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\ValueToMapRelation;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\A as ServiceLocatorA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\B as ServiceLocatorB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\ConditionCallable;
@@ -90,7 +94,7 @@ final class ObjectMapperTest extends TestCase
         $mapper = new ObjectMapper(...$deps);
         $mapped = $mapper->map(...$args);
 
-        if (\PHP_VERSION_ID >= 80400 && isset($mapped->relation) && $mapped->relation instanceof D ) {
+        if (\PHP_VERSION_ID >= 80400 && isset($mapped->relation) && $mapped->relation instanceof D) {
             $mapped->relation->baz;
         }
 
@@ -582,5 +586,29 @@ final class ObjectMapperTest extends TestCase
         $this->assertTrue($refl->isUninitializedLazyObject($target->user));
         $this->assertSame('Test User', $target->user->name);
         $this->assertFalse($refl->isUninitializedLazyObject($target->user));
+    }
+
+    public function testSkipLazyGhostWithClassTransform()
+    {
+        $service = new LoadedValueService();
+        $service->load();
+
+        $metadataFactory = new ReflectionObjectMapperMetadataFactory();
+        $mapper = new ObjectMapper(
+            metadataFactory: $metadataFactory,
+            transformCallableLocator: $this->getServiceLocator([ServiceLoadedValueTransformer::class => new ServiceLoadedValueTransformer($service, $metadataFactory)])
+        );
+
+        $value = new ValueToMap();
+        $value->relation = new ValueToMapRelation('test');
+
+        $result = $mapper->map($value);
+        if (\PHP_VERSION_ID >= 80400) {
+            $refl = new \ReflectionClass($result->relation);
+            $this->assertFalse($refl->isUninitializedLazyObject($result->relation));
+        }
+
+        $this->assertSame($result->relation, $service->get());
+        $this->assertSame($result->relation->name, 'loaded');
     }
 }

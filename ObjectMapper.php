@@ -241,8 +241,16 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             } elseif ($objectMap->offsetExists($value)) {
                 $value = $objectMap[$value];
             } elseif (\PHP_VERSION_ID < 80400) {
+                if ($mapTo->transform) {
+                    return $value;
+                }
+
                 return ($this->objectMapper ?? $this)->map($value, $mapTo->target);
             } else {
+                if ($mapTo->transform) {
+                    return $value;
+                }
+
                 $refl = new \ReflectionClass($mapTo->target);
                 $mapper = $this->objectMapper ?? $this;
 
