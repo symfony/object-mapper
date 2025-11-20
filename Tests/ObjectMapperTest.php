@@ -37,6 +37,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\DefaultLazy\OrderTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DefaultLazy\UserSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DefaultLazy\UserTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DefaultValueStdClass\TargetDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\EmbeddedMapping\Address;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\EmbeddedMapping\User as UserEmbeddedMapping;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\EmbeddedMapping\UserDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\TargetUser;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\User;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Flatten\UserProfile;
@@ -610,5 +613,23 @@ final class ObjectMapperTest extends TestCase
 
         $this->assertSame($result->relation, $service->get());
         $this->assertSame($result->relation->name, 'loaded');
+    }
+
+    public function testMapEmbeddedProperties()
+    {
+        $dto = new UserDto(
+            userAddressZipcode: '12345',
+            userAddressCity: 'Test City',
+            name: 'John Doe'
+        );
+
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $user = $mapper->map($dto, UserEmbeddedMapping::class);
+
+        $this->assertInstanceOf(UserEmbeddedMapping::class, $user);
+        $this->assertSame('John Doe', $user->name);
+        $this->assertInstanceOf(Address::class, $user->address);
+        $this->assertSame('12345', $user->address->zipcode);
+        $this->assertSame('Test City', $user->address->city);
     }
 }
