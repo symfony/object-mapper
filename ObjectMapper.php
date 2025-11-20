@@ -173,7 +173,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             }
         }
 
-        if ($mappingToObject && $ctorArguments) {
+        if ($mappingToObject && $rootCall && $ctorArguments) {
             foreach ($ctorArguments as $property => $value) {
                 if ($this->propertyIsMappable($refl, $property) && $this->propertyIsMappable($targetRefl, $property)) {
                     $mapToProperties[$property] = $value;
