@@ -70,6 +70,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as 
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Source as PromotedConstructorWithMetadataSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Target as PromotedConstructorWithMetadataTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadOnlyPromotedPropertyA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadOnlyPromotedPropertyAMapped;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadOnlyPromotedPropertyB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadOnlyPromotedPropertyBMapped;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\LoadedValueService;
@@ -628,5 +632,23 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(Address::class, $user->address);
         $this->assertSame('12345', $user->address->zipcode);
         $this->assertSame('Test City', $user->address->city);
+    }
+
+    public function testBugReportLazyLoadingPromotedReadonlyProperty()
+    {
+        $source = new ReadOnlyPromotedPropertyA(
+            b: new ReadOnlyPromotedPropertyB(
+                var2: 'bar',
+            ),
+            var1: 'foo',
+        );
+
+        $mapper = new ObjectMapper();
+        $out = $mapper->map($source);
+
+        $this->assertInstanceOf(ReadOnlyPromotedPropertyAMapped::class, $out);
+        $this->assertInstanceOf(ReadOnlyPromotedPropertyBMapped::class, $out->b);
+        $this->assertSame('foo', $out->var1);
+        $this->assertSame('bar', $out->b->var2);
     }
 }
