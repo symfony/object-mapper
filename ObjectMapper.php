@@ -150,10 +150,6 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 }
 
                 $targetPropertyName = $mapping->target ?? $propertyName;
-                if (!$targetRefl->hasProperty($targetPropertyName)) {
-                    continue;
-                }
-
                 $value = $this->getSourceValue($source, $mappedTarget, $value, $objectMap, $mapping);
                 $this->storeValue($targetPropertyName, $mapToProperties, $ctorArguments, $value);
             }
@@ -186,7 +182,19 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         foreach ($mapToProperties as $property => $value) {
-            $this->propertyAccessor ? $this->propertyAccessor->setValue($mappedTarget, $property, $value) : ($mappedTarget->{$property} = $value);
+            if ($this->propertyAccessor) {
+                if ($this->propertyAccessor->isWritable($mappedTarget, $property)) {
+                    $this->propertyAccessor->setValue($mappedTarget, $property, $value);
+                }
+
+                continue;
+            }
+
+            if (!$targetRefl->hasProperty($property)) {
+                continue;
+            }
+
+            $mappedTarget->{$property} = $value;
         }
 
         return $mappedTarget;
