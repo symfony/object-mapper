@@ -5,6 +5,7 @@ CHANGELOG
 ---
 
  * Add reverse class-map based on Map attribute
+ * Merge nested properties when targeting the same class
 
 7.4
 ---

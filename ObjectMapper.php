@@ -155,7 +155,11 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 $this->storeValue($targetPropertyName, $mapToProperties, $ctorArguments, $value);
             }
 
-            if (!$mappings && $targetRefl->hasProperty($propertyName)) {
+            if ($mappings) {
+                continue;
+            }
+
+            if ($targetRefl->hasProperty($propertyName)) {
                 if (!$this->isReadable($source, $propertyName)) {
                     continue;
                 }
@@ -167,6 +171,18 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
                 $value = $this->getSourceValue($source, $mappedTarget, $this->getRawValue($source, $propertyName), $objectMap);
                 $this->storeValue($propertyName, $mapToProperties, $ctorArguments, $value);
+                continue;
+            }
+
+            $rawValue = $this->getRawValue($source, $propertyName);
+            if (
+                \is_object($rawValue)
+                && ($innerMetadata = $this->metadataFactory->create($rawValue))
+                && ($mapTo = $this->getMapTarget($innerMetadata, $rawValue, $source, $mappedTarget))
+                && \is_string($mapTo->target)
+                && $mapTo->target === $targetRefl->getName()
+            ) {
+                ($this->objectMapper ?? $this)->map($rawValue, $mappedTarget);
             }
         }
 

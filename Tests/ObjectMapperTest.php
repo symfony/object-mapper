@@ -72,6 +72,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MyProxy;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDataDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDataResource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
@@ -731,5 +734,26 @@ final class ObjectMapperTest extends TestCase
         $source = new MultipleTargetPropertyA();
         $mapper = new ObjectMapper();
         $mapper->map($source);
+    }
+
+    public function testNestedBankDataMapping()
+    {
+        $bankDto = new NestedBankDto();
+        $bankDto->bic = 'BIC123';
+        $bankDto->code = 'BANK001';
+        $bankDto->name = 'Test Bank';
+
+        $bankDataDto = new NestedBankDataDto();
+        $bankDataDto->iban = 'IBAN12345';
+        $bankDataDto->bank = $bankDto;
+
+        $mapper = new ObjectMapper();
+        $bankDataResource = $mapper->map($bankDataDto, NestedBankDataResource::class);
+
+        $this->assertInstanceOf(NestedBankDataResource::class, $bankDataResource);
+        $this->assertSame('IBAN12345', $bankDataResource->iban);
+        $this->assertSame('BIC123', $bankDataResource->bic);
+        $this->assertSame('BANK001', $bankDataResource->bankCode);
+        $this->assertSame('Test Bank', $bankDataResource->bankName);
     }
 }
