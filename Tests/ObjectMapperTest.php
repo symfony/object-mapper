@@ -20,11 +20,17 @@ use Symfony\Component\ObjectMapper\Exception\NoSuchPropertyException;
 use Symfony\Component\ObjectMapper\Metadata\Mapping;
 use Symfony\Component\ObjectMapper\Metadata\ObjectMapperMetadataFactoryInterface;
 use Symfony\Component\ObjectMapper\Metadata\ReflectionObjectMapperMetadataFactory;
+use Symfony\Component\ObjectMapper\Metadata\ReverseClassObjectMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\ObjectMapper;
 use Symfony\Component\ObjectMapper\ObjectMapperInterface;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\A;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\B;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\C;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Cost;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSourceView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassWithoutTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\D;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\Recursive;
@@ -650,5 +656,40 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(ReadOnlyPromotedPropertyBMapped::class, $out->b);
         $this->assertSame('foo', $out->var1);
         $this->assertSame('bar', $out->b->var2);
+    }
+
+    public function testClassMap()
+    {
+        $classMap = [
+            Quote::class => QuoteRequestView::class,
+            Cost::class => CostRequestView::class,
+        ];
+
+        $quote = new Quote('foo', new Cost(10, 20));
+
+        $mapper = new ObjectMapper(new ReverseClassObjectMapperMetadataFactory(new ReflectionObjectMapperMetadataFactory(), $classMap));
+
+        $quoteRequestView = $mapper->map($quote);
+
+        $this->assertInstanceOf(QuoteRequestView::class, $quoteRequestView);
+        $this->assertInstanceOf(CostRequestView::class, $quoteRequestView->cost);
+        $this->assertEquals(10, $quoteRequestView->cost->amount);
+        $this->assertEquals(20, $quoteRequestView->cost->tax);
+    }
+
+    public function testClassMapWithSourceAttribute()
+    {
+        $classMap = [
+            Cost::class => CostRequestWithSourceView::class,
+        ];
+
+        $cost = new Cost(10, 20, 'bar');
+
+        $mapper = new ObjectMapper(new ReverseClassObjectMapperMetadataFactory(new ReflectionObjectMapperMetadataFactory(), $classMap));
+
+        $costRequestView = $mapper->map($cost);
+
+        $this->assertInstanceOf(CostRequestWithSourceView::class, $costRequestView);
+        $this->assertEquals('bar', $costRequestView->foo);
     }
 }

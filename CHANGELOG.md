@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+8.1
+---
+
+ * Add reverse class-map based on Map attribute
+
 7.4
 ---
 
