@@ -607,11 +607,8 @@ final class ObjectMapperTest extends TestCase
         $value->relation = new ValueToMapRelation('test');
 
         $result = $mapper->map($value);
-        if (\PHP_VERSION_ID >= 80400) {
-            $refl = new \ReflectionClass($result->relation);
-            $this->assertFalse($refl->isUninitializedLazyObject($result->relation));
-        }
-
+        $refl = new \ReflectionClass($result->relation);
+        $this->assertFalse($refl->isUninitializedLazyObject($result->relation));
         $this->assertSame($result->relation, $service->get());
         $this->assertSame($result->relation->name, 'loaded');
     }
