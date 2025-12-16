@@ -350,7 +350,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: fn () => 'str')]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: static fn () => 'str')]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -364,7 +364,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: fn () => new \stdClass())]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: static fn () => new \stdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -454,7 +454,7 @@ final class ObjectMapperTest extends TestCase
     public function testMapInitializesNativePhp84LazyObject()
     {
         $initialized = false;
-        $initializer = function () use (&$initialized) {
+        $initializer = static function () use (&$initialized) {
             $initialized = true;
 
             $p = new MyProxy();
