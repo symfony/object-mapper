@@ -654,4 +654,25 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame('foo', $out->var1);
         $this->assertSame('bar', $out->b->var2);
     }
+
+    public function testMissingSourcePropertiesAreIgnored()
+    {
+        $mapper = new ObjectMapper();
+        $source = new class {
+            public string $name = 'test';
+        };
+        $target = $mapper->map($source, new class {
+            public string $name;
+            public bool $withDefault = true;
+            public string $withoutDefault;
+        });
+
+        $this->assertSame('test', $target->name);
+        $this->assertTrue($target->withDefault);
+
+        $this->assertFalse(
+            (new \ReflectionProperty($target, 'withoutDefault'))->isInitialized($target),
+            'Property without default value should remain uninitialized'
+        );
+    }
 }
