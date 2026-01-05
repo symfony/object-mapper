@@ -363,6 +363,14 @@ final class ObjectMapperTest extends TestCase
         $mapper->map($u);
     }
 
+    public function testHasInvalidTransformValue()
+    {
+        $this->expectException(NoSuchCallableException::class);
+        $this->expectExceptionMessage('"wrongMethod" is not a valid callable. If you use a class, make sure it implements "Symfony\Component\ObjectMapper\TransformCallableInterface".');
+
+        (new ObjectMapper())->map(new InvalidConfiguration('foo', 'bar'));
+    }
+
     public function testTransformToWrongObject()
     {
         $this->expectException(MappingException::class);
@@ -711,13 +719,5 @@ final class ObjectMapperTest extends TestCase
             (new \ReflectionProperty($target, 'withoutDefault'))->isInitialized($target),
             'Property without default value should remain uninitialized'
         );
-    }
-
-    public function testHasInvalidTransformValue()
-    {
-        $this->expectExceptionObject(new NoSuchCallableException(
-            '"wrongMethod" is not a valid callable.'
-        ));
-        (new ObjectMapper())->map(new InvalidConfiguration('foo', 'bar'));
     }
 }

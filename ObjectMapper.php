@@ -146,7 +146,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 }
 
                 $value = $this->getRawValue($source, $sourcePropertyName);
-                if ($if && ($fn = $this->getCallable($if, $this->conditionCallableLocator)) && !$this->call($fn, $value, $source, $mappedTarget)) {
+                if ($if && ($fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class)) && !$this->call($fn, $value, $source, $mappedTarget)) {
                     continue;
                 }
 
@@ -312,7 +312,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     {
         $mapTo = null;
         foreach ($metadata as $mapAttribute) {
-            if (($if = $mapAttribute->if) && ($fn = $this->getCallable($if, $this->conditionCallableLocator)) && !$this->call($fn, $value, $source, $target)) {
+            if (($if = $mapAttribute->if) && ($fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class)) && !$this->call($fn, $value, $source, $target)) {
                 continue;
             }
 
@@ -335,9 +335,8 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         foreach ($transforms as $transform) {
-            if ($fn = $this->getCallable($transform, $this->transformCallableLocator)) {
-                $value = $this->call($fn, $value, $source, $target);
-            }
+            $fn = $this->getCallable($transform, $this->transformCallableLocator, TransformCallableInterface::class);
+            $value = $this->call($fn, $value, $source, $target);
         }
 
         return $value;
@@ -345,15 +344,26 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
     /**
      * @param (string|callable(mixed $value, object $object): mixed) $fn
+     * @param class-string|null                                      $expectedInterface
      */
-    private function getCallable(string|callable $fn, ?ContainerInterface $locator = null): callable
+    private function getCallable(string|callable $fn, ?ContainerInterface $locator = null, ?string $expectedInterface = null): callable
     {
         if (\is_callable($fn)) {
+            if ($expectedInterface && \is_object($fn) && !$fn instanceof $expectedInterface) {
+                throw new NoSuchCallableException(\sprintf('"%s" is not a valid callable. Make sure it implements "%s".', get_debug_type($fn), $expectedInterface));
+            }
+
             return $fn;
         }
 
         if ($locator?->has($fn)) {
-            return $locator->get($fn);
+            $callable = $locator->get($fn);
+
+            if ($expectedInterface && !$callable instanceof $expectedInterface) {
+                throw new NoSuchCallableException(\sprintf('"%s" is not a valid callable. Make sure it implements "%s".', $fn, $expectedInterface));
+            }
+
+            return $callable;
         }
 
         throw new NoSuchCallableException(\sprintf('"%s" is not a valid callable.', $fn));
