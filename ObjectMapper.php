@@ -60,7 +60,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     private function doMap(object $source, object|string|null $target, \WeakMap $objectMap, bool $rootCall): object
     {
         $metadata = $this->metadataFactory->create($source);
-        $map = $this->getMapTarget($metadata, null, $source, null);
+        $map = $this->getMapTarget($metadata, null, $source, null, null === $target);
         $target ??= $map?->target;
         $mappingToObject = \is_object($target);
 
@@ -82,7 +82,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         if (!$metadata && $targetMetadata = $this->metadataFactory->create($mappedTarget)) {
             $metadata = $targetMetadata;
-            $map = $this->getMapTarget($metadata, null, $source, null);
+            $map = $this->getMapTarget($metadata, null, $source, null, false);
         }
 
         if ($map && $map->transform) {
@@ -243,7 +243,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         if (
             \is_object($value)
             && ($innerMetadata = $this->metadataFactory->create($value))
-            && ($mapTo = $this->getMapTarget($innerMetadata, $value, $source, $target))
+            && ($mapTo = $this->getMapTarget($innerMetadata, $value, $source, $target, true))
             && (\is_string($mapTo->target) && class_exists($mapTo->target))
         ) {
             $value = $this->applyTransforms($mapTo, $value, $source, $target);
@@ -313,12 +313,16 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     /**
      * @param Mapping[] $metadata
      */
-    private function getMapTarget(array $metadata, mixed $value, object $source, ?object $target): ?Mapping
+    private function getMapTarget(array $metadata, mixed $value, object $source, ?object $target, bool $enforceUnique = false): ?Mapping
     {
         $mapTo = null;
         foreach ($metadata as $mapAttribute) {
             if (($if = $mapAttribute->if) && ($fn = $this->getCallable($if, $this->conditionCallableLocator)) && !$this->call($fn, $value, $source, $target)) {
                 continue;
+            }
+
+            if ($enforceUnique && null !== $mapTo) {
+                throw new MappingException(\sprintf('Ambiguous mapping for "%s". Multiple #[Map] attributes match. Use the "if" parameter to specify conditions.', get_debug_type($value ?? $source)));
             }
 
             $mapTo = $mapAttribute;

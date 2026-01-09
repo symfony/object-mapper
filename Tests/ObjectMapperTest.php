@@ -675,4 +675,14 @@ final class ObjectMapperTest extends TestCase
             'Property without default value should remain uninitialized'
         );
     }
+
+    public function testMultipleTargetsWithoutConditionThrowsExceptionWhenNoTargetProvided()
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('Ambiguous mapping');
+
+        $source = new MultipleTargetPropertyA();
+        $mapper = new ObjectMapper();
+        $mapper->map($source);
+    }
 }
