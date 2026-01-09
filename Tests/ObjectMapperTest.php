@@ -72,6 +72,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MyProxy;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedCollectionMapping\LineItemSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedCollectionMapping\LineItemTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedCollectionMapping\OrderSource as NestedCollectionOrderSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedCollectionMapping\OrderTarget as NestedCollectionOrderTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDataDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDataResource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMapping\NestedBankDto;
@@ -594,6 +598,29 @@ final class ObjectMapperTest extends TestCase
         $transformed = $mapper->map($u, TransformCollectionB::class);
 
         $this->assertEquals([new TransformCollectionD('a'), new TransformCollectionD('b')], $transformed->foo);
+    }
+
+    public function testMapCollectionWithTargetClass()
+    {
+        $source = new NestedCollectionOrderSource();
+        $source->items = [
+            new LineItemSource('Product A', 2, 19.99),
+            new LineItemSource('Product B', 1, 49.99),
+        ];
+
+        $mapper = new ObjectMapper();
+        $target = $mapper->map($source);
+
+        $this->assertInstanceOf(NestedCollectionOrderTarget::class, $target);
+        $this->assertCount(2, $target->items);
+        $this->assertInstanceOf(LineItemTarget::class, $target->items[0]);
+        $this->assertInstanceOf(LineItemTarget::class, $target->items[1]);
+        $this->assertSame('Product A', $target->items[0]->productName);
+        $this->assertSame(2, $target->items[0]->quantity);
+        $this->assertSame(19.99, $target->items[0]->amount);
+        $this->assertSame('Product B', $target->items[1]->productName);
+        $this->assertSame(1, $target->items[1]->quantity);
+        $this->assertSame(49.99, $target->items[1]->amount);
     }
 
     public function testEmbedsAreLazyLoadedByDefault()

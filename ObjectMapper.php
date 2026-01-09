@@ -356,6 +356,9 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         foreach ($transforms as $transform) {
             $fn = $this->getCallable($transform, $this->transformCallableLocator, TransformCallableInterface::class);
+            if ($fn instanceof ObjectMapperAwareInterface) {
+                $fn = $fn->withObjectMapper($this->objectMapper ?? $this);
+            }
             $value = $this->call($fn, $value, $source, $target);
         }
 
