@@ -370,7 +370,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             return $callable;
         }
 
-        throw new NoSuchCallableException(\sprintf('"%s" is not a valid callable.', $fn));
+        throw new NoSuchCallableException(\sprintf('"%s" is not a valid callable.', $fn).($expectedInterface ? \sprintf(' If you use a class, make sure it implements "%s".', $expectedInterface) : ''));
     }
 
     /**

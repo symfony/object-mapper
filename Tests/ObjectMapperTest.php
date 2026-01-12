@@ -94,6 +94,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\ConditionCallab
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLocator\TransformCallable;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\SourceEntity;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TargetTransform\TargetDto as TargetTransformTargetDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\Transform\TransformToStdClass;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\Transform\TransformToString;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
@@ -358,7 +360,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: static fn () => 'str')]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: new TransformToString())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -380,7 +382,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: static fn () => new \stdClass())]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: new TransformToStdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
