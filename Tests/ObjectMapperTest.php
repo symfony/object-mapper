@@ -91,6 +91,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformC
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionD;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\InputSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\ConstructorTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\NotNullCondition;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
@@ -684,5 +687,19 @@ final class ObjectMapperTest extends TestCase
         $source = new MultipleTargetPropertyA();
         $mapper = new ObjectMapper();
         $mapper->map($source);
+    }
+
+    public function testConditionalMappingAppliedToConstructorArguments()
+    {
+        $mapper = new ObjectMapper();
+
+        $sourceWithNull = new InputSource();
+        $targetWithNull = $mapper->map($sourceWithNull);
+        $this->assertFalse((new \ReflectionProperty($targetWithNull, 'name'))->isInitialized($targetWithNull));
+
+        $sourceWithValue = new InputSource();
+        $sourceWithValue->name = 'test';
+        $targetWithValue = $mapper->map($sourceWithValue);
+        $this->assertSame('test', $targetWithValue->name);
     }
 }
