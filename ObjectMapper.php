@@ -141,16 +141,20 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     $sourcePropertyName = $mapping->source;
                 }
 
+                $targetPropertyName = $mapping->target ?? $propertyName;
                 if (false === $if = $mapping->if) {
+                    unset($ctorArguments[$targetPropertyName]);
+
                     continue;
                 }
 
                 $value = $this->getRawValue($source, $sourcePropertyName);
                 if ($if && ($fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class)) && !$this->call($fn, $value, $source, $mappedTarget)) {
+                    unset($ctorArguments[$targetPropertyName]);
+
                     continue;
                 }
 
-                $targetPropertyName = $mapping->target ?? $propertyName;
                 $value = $this->getSourceValue($source, $mappedTarget, $value, $objectMap, $mapping);
                 $this->storeValue($targetPropertyName, $mapToProperties, $ctorArguments, $value);
             }
@@ -186,7 +190,9 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             }
         }
 
-        if ((!$mappingToObject || !$rootCall) && !$map?->transform && $targetConstructor) {
+        if ((!$mappingToObject || !$rootCall) && !$map?->transform && $targetConstructor
+            && ($ctorArguments || !$targetConstructor->getNumberOfRequiredParameters())
+        ) {
             try {
                 $mappedTarget->__construct(...$ctorArguments);
             } catch (\ReflectionException $e) {
