@@ -27,6 +27,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\A;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\B;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\C;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassWithoutTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\InputSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\Address as ConditionalSourceMapAddress;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\User as ConditionalSourceMapUser;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\UserDto as ConditionalSourceMapUserDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\D;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\Recursive;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\RecursiveDto;
@@ -91,9 +95,6 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformC
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionD;
-use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\InputSource;
-use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\ConstructorTarget;
-use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\NotNullCondition;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 final class ObjectMapperTest extends TestCase
@@ -354,7 +355,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: fn () => 'str')]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: static fn () => 'str')]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -368,7 +369,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: fn () => new \stdClass())]);
+        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: static fn () => new \stdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -459,7 +460,7 @@ final class ObjectMapperTest extends TestCase
     public function testMapInitializesNativePhp84LazyObject()
     {
         $initialized = false;
-        $initializer = function () use (&$initialized) {
+        $initializer = static function () use (&$initialized) {
             $initialized = true;
 
             $p = new MyProxy();
@@ -638,6 +639,31 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(Address::class, $user->address);
         $this->assertSame('12345', $user->address->zipcode);
         $this->assertSame('Test City', $user->address->city);
+    }
+
+    public function testConditionalMapSource()
+    {
+        $dto = new ConditionalSourceMapUserDto(
+            userAddressZipcode: '12345',
+            userAddressCity: 'Test City',
+            name: 'John Doe'
+        );
+
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mappedUser = $mapper->map($dto, ConditionalSourceMapUser::class);
+        $reverseMappedUserDTO = $mapper->map($mappedUser, $dto);
+
+        $this->assertInstanceOf(ConditionalSourceMapUser::class, $mappedUser);
+        $this->assertSame('John Doe', $mappedUser->name);
+
+        $this->assertInstanceOf(ConditionalSourceMapAddress::class, $mappedUser->address);
+        $this->assertSame('12345', $mappedUser->address->zipcode);
+        $this->assertSame('Test City', $mappedUser->address->city);
+
+        $this->assertInstanceOf(ConditionalSourceMapUserDto::class, $reverseMappedUserDTO);
+        $this->assertSame('John Doe', $reverseMappedUserDTO->name);
+        $this->assertSame('12345', $reverseMappedUserDTO->userAddressZipcode);
+        $this->assertSame('Test City', $reverseMappedUserDTO->userAddressCity);
     }
 
     public function testBugReportLazyLoadingPromotedReadonlyProperty()
