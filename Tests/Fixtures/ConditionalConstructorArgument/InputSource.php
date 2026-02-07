@@ -7,6 +7,6 @@ use Symfony\Component\ObjectMapper\Attribute\Map;
 #[Map(ConstructorTarget::class)]
 class InputSource
 {
-    #[Map(if: new NotNullCondition)]
+    #[Map(if: new NotNullCondition())]
     public ?string $name = null;
 }

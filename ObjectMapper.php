@@ -12,7 +12,7 @@
 namespace Symfony\Component\ObjectMapper;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\ObjectMapper\Condition\TargetClass;
+use Symfony\Component\ObjectMapper\Condition\ClassRuleConditionCallableInterface;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 use Symfony\Component\ObjectMapper\Exception\MappingTransformException;
 use Symfony\Component\ObjectMapper\Exception\NoSuchCallableException;
@@ -152,7 +152,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 if (
                     $if
                     && ($fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class))
-                    && $fn instanceof TargetClass
+                    && $fn instanceof ClassRuleConditionCallableInterface
                     && !$this->call($fn, null, $source, $mappedTarget)
                 ) {
                     continue;

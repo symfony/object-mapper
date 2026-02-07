@@ -14,27 +14,27 @@ namespace Symfony\Component\ObjectMapper\Condition;
 /**
  * @template T of object
  *
- * @implements ClassRuleConditionCallableInterface<object, T>
+ * @implements ClassRuleConditionCallableInterface<T, object>
  */
-final class TargetClass implements ClassRuleConditionCallableInterface
+final class SourceClass implements ClassRuleConditionCallableInterface
 {
     /**
      * @var non-empty-array<class-string>
      */
-    private readonly array $targets;
+    private readonly array $sources;
 
     /**
      * @param class-string<T>|array<class-string<T>> $className
      */
     public function __construct(string|array $className)
     {
-        $this->targets = \is_array($className) ? $className : [$className];
+        $this->sources = \is_array($className) ? $className : [$className];
     }
 
     public function __invoke(mixed $value, object $source, ?object $target): bool
     {
-        foreach ($this->targets as $validTarget) {
-            if ($target instanceof $validTarget) {
+        foreach ($this->sources as $validSource) {
+            if ($source instanceof $validSource) {
                 return true;
             }
         }

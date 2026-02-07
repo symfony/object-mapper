@@ -9,10 +9,8 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty;
+namespace Symfony\Component\ObjectMapper\Exception;
 
-class B
+class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
 {
-    public string $foo;
-    public string $otherFoo;
 }

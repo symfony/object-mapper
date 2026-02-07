@@ -32,6 +32,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSourceView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\A as ClassRuleA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\B as ClassRuleB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\C as ClassRuleC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassWithoutTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\InputSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\Address as ConditionalSourceMapAddress;
@@ -70,6 +73,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Target;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\A as MapTargetToSourceA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapTargetToSource\B as MapTargetToSourceB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleSourceProperty\A as MultipleSourcePropertyA;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleSourceProperty\B as MultipleSourcePropertyB;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleSourceProperty\C as MultipleSourcePropertyC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\A as MultipleTargetPropertyA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\B as MultipleTargetPropertyB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as MultipleTargetPropertyC;
@@ -419,11 +425,61 @@ final class ObjectMapperTest extends TestCase
         $b = $mapper->map($u, MultipleTargetPropertyB::class);
         $this->assertInstanceOf(MultipleTargetPropertyB::class, $b);
         $this->assertEquals('TEST', $b->foo);
+        $this->assertEquals('testother', $b->otherFoo);
+
         $c = $mapper->map($u, MultipleTargetPropertyC::class);
         $this->assertInstanceOf(MultipleTargetPropertyC::class, $c);
         $this->assertEquals('test', $c->bar);
         $this->assertEquals('donotmap', $c->foo);
+        $this->assertEquals('testother', $c->otherFoo);
         $this->assertEquals('foo', $c->doesNotExistInTargetB);
+    }
+
+    public function testMultipleSourceMapProperty()
+    {
+        $b = new MultipleSourcePropertyB();
+        $c = new MultipleSourcePropertyC();
+        $mapper = new ObjectMapper();
+
+        $a1 = $mapper->map($b, MultipleSourcePropertyA::class);
+        $this->assertInstanceOf(MultipleSourcePropertyA::class, $a1);
+        $this->assertEquals('test', $a1->something);
+        $this->assertEquals('TEST', $a1->somethingOther);
+
+        $a2 = $mapper->map($c, MultipleSourcePropertyA::class);
+        $this->assertInstanceOf(MultipleSourcePropertyA::class, $a2);
+        $this->assertEquals('TEST', $a2->something);
+        $this->assertEquals('DONOTMAP', $a2->somethingOther);
+        $this->assertEquals('foo', $a2->doesNotExistInSourceB);
+    }
+
+    public function testMultipleClassRuleMapProperty()
+    {
+        $a = new ClassRuleA();
+
+        $mapper = new ObjectMapper();
+        $b = $mapper->map($a, ClassRuleB::class);
+        $this->assertInstanceOf(ClassRuleB::class, $b);
+        $this->assertEquals('TESTTARGETED', $b->foo);
+
+        $c = $mapper->map($a, ClassRuleC::class);
+        $this->assertInstanceOf(ClassRuleC::class, $c);
+        $this->assertEquals('testTargeted', $c->bar);
+        $this->assertEquals('donotmap', $c->foo);
+
+        $b = new ClassRuleB();
+        $c = new ClassRuleC();
+        $mapper = new ObjectMapper();
+
+        $a1 = $mapper->map($b, ClassRuleA::class);
+        $this->assertInstanceOf(ClassRuleA::class, $a1);
+        $this->assertEquals('testsourced', $a1->somethingSourced);
+        $this->assertEquals('testTargeted', $a1->somethingTargeted);
+
+        $a2 = $mapper->map($c, ClassRuleA::class);
+        $this->assertInstanceOf(ClassRuleA::class, $a2);
+        $this->assertEquals('TESTSOURCED', $a2->somethingSourced);
+        $this->assertEquals('testTargeted', $a2->somethingTargeted);
     }
 
     public function testDefaultValueStdClass()

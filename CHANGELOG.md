@@ -8,6 +8,8 @@ CHANGELOG
  * Merge nested properties when targeting the same class
  * Add a `targetClass` option to `MapCollection`
  * Add a `TransformObjectMapperAwareInterface` to inject the current object mapper instance to transformers
+ * Add `SourceClass`, `ClassRule`, and `ClassRuleList` condition callables to match mapping rules based on source/target class
+ * Allow `TargetClass` and `SourceClass` to accept arrays of class FQDNs
 
 7.4
 ---

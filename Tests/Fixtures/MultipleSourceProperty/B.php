@@ -9,10 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty;
+namespace Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleSourceProperty;
 
 class B
 {
-    public string $foo;
-    public string $otherFoo;
+    public string $foo = 'test';
 }

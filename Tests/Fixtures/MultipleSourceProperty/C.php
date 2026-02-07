@@ -9,10 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty;
+namespace Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleSourceProperty;
 
-class B
+class C
 {
-    public string $foo;
-    public string $otherFoo;
+    public string $foo = 'donotmap';
+    public string $bar = 'TEST';
+    public string $doesNotExistInSourceB = 'foo';
 }
