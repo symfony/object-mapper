@@ -34,6 +34,9 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassWithoutTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalConstructorArgument\InputSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\Address as ConditionalSourceMapAddress;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\User as ConditionalSourceMapUser;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ConditionalSourceMap\UserDto as ConditionalSourceMapUserDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\D;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\Recursive;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\DeeperRecursion\RecursiveDto;
@@ -678,6 +681,31 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(Address::class, $user->address);
         $this->assertSame('12345', $user->address->zipcode);
         $this->assertSame('Test City', $user->address->city);
+    }
+
+    public function testConditionalMapSource()
+    {
+        $dto = new ConditionalSourceMapUserDto(
+            userAddressZipcode: '12345',
+            userAddressCity: 'Test City',
+            name: 'John Doe'
+        );
+
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mappedUser = $mapper->map($dto, ConditionalSourceMapUser::class);
+        $reverseMappedUserDTO = $mapper->map($mappedUser, $dto);
+
+        $this->assertInstanceOf(ConditionalSourceMapUser::class, $mappedUser);
+        $this->assertSame('John Doe', $mappedUser->name);
+
+        $this->assertInstanceOf(ConditionalSourceMapAddress::class, $mappedUser->address);
+        $this->assertSame('12345', $mappedUser->address->zipcode);
+        $this->assertSame('Test City', $mappedUser->address->city);
+
+        $this->assertInstanceOf(ConditionalSourceMapUserDto::class, $reverseMappedUserDTO);
+        $this->assertSame('John Doe', $reverseMappedUserDTO->name);
+        $this->assertSame('12345', $reverseMappedUserDTO->userAddressZipcode);
+        $this->assertSame('Test City', $reverseMappedUserDTO->userAddressCity);
     }
 
     public function testBugReportLazyLoadingPromotedReadonlyProperty()
