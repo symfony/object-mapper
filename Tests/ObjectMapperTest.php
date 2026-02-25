@@ -68,6 +68,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargetProperty\C as Mu
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\A as MultipleTargetsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MultipleTargets\C as MultipleTargetsC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MyProxy;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ChildWithClassTransformTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ChildWithoutClassTransformerTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ParentSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ParentTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
@@ -721,5 +725,34 @@ final class ObjectMapperTest extends TestCase
         $sourceWithValue->name = 'test';
         $targetWithValue = $mapper->map($sourceWithValue);
         $this->assertSame('test', $targetWithValue->name);
+    }
+
+    public function testNestedMappingWithClassTransform()
+    {
+        $target = (new ObjectMapper())->map(new ParentSource());
+
+        $this->assertInstanceOf(ParentTarget::class, $target);
+        $this->assertTrue($target->transformed);
+        $this->assertInstanceOf(ChildWithClassTransformTarget::class, $target->childWithClassTransformer);
+        $this->assertSame('ChildWithClassTransformSource', $target->childWithClassTransformer->name);
+        $this->assertTrue($target->childWithClassTransformer->classTransformed);
+    }
+
+    public function testNestedMappingWithPropertyTransform()
+    {
+        $target = (new ObjectMapper())->map(new ParentSource());
+
+        $this->assertInstanceOf(ChildWithoutClassTransformerTarget::class, $target->childWithoutClassTransformer);
+        $this->assertSame('child', $target->childWithoutClassTransformer->name);
+        $this->assertTrue($target->childWithoutClassTransformer->propertyTransformed);
+    }
+
+    public function testNestedMappingWithBothPropertyAndClassTransforms()
+    {
+        $target = (new ObjectMapper())->map(new ParentSource());
+
+        $this->assertInstanceOf(ChildWithClassTransformTarget::class, $target->childWithBothTransformers);
+        $this->assertSame('both', $target->childWithBothTransformers->name);
+        $this->assertTrue($target->childWithBothTransformers->classTransformed);
     }
 }
