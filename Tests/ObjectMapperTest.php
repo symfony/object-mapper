@@ -66,6 +66,10 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallback\B as Instance
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\A as InstanceCallbackWithArgumentsA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\B as InstanceCallbackWithArgumentsB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\InvalidConfiguration;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullSourceMapping;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullTargetMapping;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\LazyFoo;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
@@ -914,5 +918,72 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(ChildWithClassTransformTarget::class, $target->childWithBothTransformers);
         $this->assertSame('both', $target->childWithBothTransformers->name);
         $this->assertTrue($target->childWithBothTransformers->classTransformed);
+    }
+
+    public function testIsNotNullConditionSkipsNullProperties()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSource(name: 'Alice');
+        $target = $mapper->map($source);
+        $this->assertInstanceOf(IsNotNullTarget::class, $target);
+        $this->assertSame('Alice', $target->name);
+        $this->assertNull($target->age);
+    }
+
+    public function testIsNotNullConditionPreservesExistingTargetValues()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSource(name: 'Bob');
+        $target = new IsNotNullTarget();
+        $target->age = 30;
+
+        $mapped = $mapper->map($source, $target);
+        $this->assertSame('Bob', $mapped->name);
+        $this->assertSame(30, $mapped->age);
+    }
+
+    public function testIsNotNullConditionMapsAllNonNullValues()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSource(name: 'Charlie', age: 25);
+        $target = $mapper->map($source);
+        $this->assertSame('Charlie', $target->name);
+        $this->assertSame(25, $target->age);
+    }
+
+    public function testIsNotNullConditionWithSourceMappingSkipsNullProperties()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSourceMapping(firstName: 'Alice');
+        $target = $mapper->map($source, new IsNotNullTargetMapping());
+        $this->assertSame('Alice', $target->name);
+        $this->assertNull($target->points);
+    }
+
+    public function testIsNotNullConditionWithSourceMappingPreservesExistingTargetValues()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSourceMapping(firstName: 'Bob');
+        $target = new IsNotNullTargetMapping();
+        $target->points = 100;
+
+        $mapped = $mapper->map($source, $target);
+        $this->assertSame('Bob', $mapped->name);
+        $this->assertSame(100, $mapped->points);
+    }
+
+    public function testIsNotNullConditionWithSourceMappingMapsAllNonNullValues()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new IsNotNullSourceMapping(firstName: 'Charlie', score: 42);
+        $target = $mapper->map($source, new IsNotNullTargetMapping());
+        $this->assertSame('Charlie', $target->name);
+        $this->assertSame(42, $target->points);
     }
 }

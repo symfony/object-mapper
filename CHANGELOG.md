@@ -10,6 +10,7 @@ CHANGELOG
  * Add a `TransformObjectMapperAwareInterface` to inject the current object mapper instance to transformers
  * Add `SourceClass`, `ClassRule`, and `ClassRuleList` condition callables to match mapping rules based on source/target class
  * Allow `TargetClass` and `SourceClass` to accept arrays of class FQDNs
+ * Add `IsNotNull` built-in condition to skip mapping when a source property value is null
 
 7.4
 ---
