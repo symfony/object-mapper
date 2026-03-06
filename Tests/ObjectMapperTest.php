@@ -374,8 +374,8 @@ final class ObjectMapperTest extends TestCase
         $u = new \stdClass();
         $u->foo = 'bar';
 
-        $metadata = $this->createMock(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: new TransformToString())]);
+        $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
+        $metadata->method('create')->willReturn([new Mapping(target: \stdClass::class, transform: new TransformToString())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -396,8 +396,8 @@ final class ObjectMapperTest extends TestCase
         $u = new \stdClass();
         $u->foo = 'bar';
 
-        $metadata = $this->createMock(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: new TransformToStdClass())]);
+        $metadata = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
+        $metadata->method('create')->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: new TransformToStdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
