@@ -326,6 +326,8 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
     }
 
     /**
+     * @param-immediately-invoked-callable $fn
+     *
      * @param callable(): mixed $fn
      */
     private function call(callable $fn, mixed $value, object $source, ?object $target = null): mixed
