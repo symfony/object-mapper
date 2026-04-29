@@ -199,7 +199,7 @@ final class ObjectMapperTest extends TestCase
     public function testMapWithInitializedConstructor()
     {
         $a = new InitializedConstructorA();
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor());
         $b = $mapper->map($a, InitializedConstructorB::class);
         $this->assertInstanceOf(InitializedConstructorB::class, $b);
         $this->assertEquals($b->tags, ['foo', 'bar']);
@@ -209,7 +209,7 @@ final class ObjectMapperTest extends TestCase
     {
         $expected = 'bar';
 
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor());
 
         $source = new \stdClass();
         $source->bar = $expected;
@@ -224,7 +224,7 @@ final class ObjectMapperTest extends TestCase
     {
         $expected = 'bar';
 
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor());
 
         $source = new \stdClass();
         $source->bar = $expected;
@@ -358,7 +358,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createMock(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->expects($this->once())->method('create')->with($u)->willReturn([new Mapping(target: \stdClass::class, transform: static fn () => 'str')]);
+        $metadata->expects($this->once())->method('create')->with($u)->willReturn([new Mapping(\stdClass::class, null, null, static fn () => 'str')]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -372,7 +372,7 @@ final class ObjectMapperTest extends TestCase
         $u->foo = 'bar';
 
         $metadata = $this->createMock(ObjectMapperMetadataFactoryInterface::class);
-        $metadata->expects($this->once())->method('create')->with($u)->willReturn([new Mapping(target: ClassWithoutTarget::class, transform: static fn () => new \stdClass())]);
+        $metadata->expects($this->once())->method('create')->with($u)->willReturn([new Mapping(ClassWithoutTarget::class, null, null, static fn () => new \stdClass())]);
         $mapper = new ObjectMapper($metadata);
         $mapper->map($u);
     }
@@ -414,7 +414,7 @@ final class ObjectMapperTest extends TestCase
     {
         $u = new \stdClass();
         $u->id = 'abc';
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessorBuilder()->disableExceptionOnInvalidPropertyPath()->getPropertyAccessor());
         $b = $mapper->map($u, TargetDto::class);
         $this->assertInstanceOf(TargetDto::class, $b);
         $this->assertSame('abc', $b->id);
@@ -629,7 +629,7 @@ final class ObjectMapperTest extends TestCase
             name: 'John Doe'
         );
 
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor());
         $user = $mapper->map($dto, UserEmbeddedMapping::class);
 
         $this->assertInstanceOf(UserEmbeddedMapping::class, $user);
@@ -647,7 +647,7 @@ final class ObjectMapperTest extends TestCase
             name: 'John Doe'
         );
 
-        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor());
         $mappedUser = $mapper->map($dto, ConditionalSourceMapUser::class);
         $reverseMappedUserDTO = $mapper->map($mappedUser, $dto);
 
