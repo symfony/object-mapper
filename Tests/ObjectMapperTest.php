@@ -29,6 +29,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\B;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\C;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Cost;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSourceAndAutoMappedView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSourceView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
@@ -823,6 +824,24 @@ final class ObjectMapperTest extends TestCase
 
         $this->assertInstanceOf(CostRequestWithSourceView::class, $costRequestView);
         $this->assertEquals('bar', $costRequestView->foo);
+    }
+
+    public function testClassMapWithSourceAttributeDoesNotBreakAutoMapping()
+    {
+        $classMap = [
+            Cost::class => CostRequestWithSourceAndAutoMappedView::class,
+        ];
+
+        $cost = new Cost(10, 20, 'bar');
+
+        $mapper = new ObjectMapper(new ReverseClassObjectMapperMetadataFactory(new ReflectionObjectMapperMetadataFactory(), $classMap));
+
+        $costRequestView = $mapper->map($cost);
+
+        $this->assertInstanceOf(CostRequestWithSourceAndAutoMappedView::class, $costRequestView);
+        $this->assertEquals('bar', $costRequestView->foo, 'Explicit mapping should work');
+        $this->assertEquals(10, $costRequestView->amount, 'Auto-mapping should also work for properties with the same name');
+        $this->assertEquals(20, $costRequestView->tax);
     }
 
     public function testMissingSourcePropertiesAreIgnored()
