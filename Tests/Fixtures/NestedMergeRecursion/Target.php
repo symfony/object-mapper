@@ -9,13 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace Symfony\Component\ObjectMapper\Exception;
+namespace Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMergeRecursion;
 
-/**
- * Thrown when an invalid transform or condition callable is defined.
- *
- * @author Michaël Marinetti <github@marinetti.fr>
- */
-class NoSuchCallableException extends MappingException
+class Target
 {
+    public string $name;
 }

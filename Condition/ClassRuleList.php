@@ -11,6 +11,8 @@
 
 namespace Symfony\Component\ObjectMapper\Condition;
 
+use Symfony\Component\ObjectMapper\Exception\InvalidArgumentException;
+
 /**
  * @implements ClassRuleConditionCallableInterface<object, object>
  */
@@ -21,6 +23,9 @@ final class ClassRuleList implements ClassRuleConditionCallableInterface
      */
     public function __construct(private array $rules)
     {
+        if (!$this->rules) {
+            throw new InvalidArgumentException('A ClassRuleList needs at least one rule.');
+        }
     }
 
     public function __invoke(mixed $value, object $source, ?object $target): bool

@@ -14,6 +14,9 @@ namespace Symfony\Component\ObjectMapper\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
+use Symfony\Component\ObjectMapper\Condition\ClassRule;
+use Symfony\Component\ObjectMapper\Condition\ClassRuleList;
+use Symfony\Component\ObjectMapper\Exception\InvalidArgumentException;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 use Symfony\Component\ObjectMapper\Exception\MappingTransformException;
 use Symfony\Component\ObjectMapper\Exception\NoSuchCallableException;
@@ -98,6 +101,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransfor
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ChildWithoutClassTransformerTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ParentSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ParentTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMergeRecursion\Source as NestedMergeRecursionSource;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMergeRecursion\Target as NestedMergeRecursionTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
@@ -910,6 +915,19 @@ final class ObjectMapperTest extends TestCase
         $this->assertSame('Test Bank', $bankDataResource->bankName);
     }
 
+    public function testNestedMergeWithCyclicSource()
+    {
+        $source = new NestedMergeRecursionSource();
+        $source->name = 'root';
+        $source->child = $source;
+
+        $mapper = new ObjectMapper();
+        $mapped = $mapper->map($source);
+
+        $this->assertInstanceOf(NestedMergeRecursionTarget::class, $mapped);
+        $this->assertSame('root', $mapped->name);
+    }
+
     public function testNestedMappingWithClassTransform()
     {
         $target = (new ObjectMapper())->map(new ParentSource());
@@ -1004,5 +1022,76 @@ final class ObjectMapperTest extends TestCase
         $target = $mapper->map($source, new IsNotNullTargetMapping());
         $this->assertSame('Charlie', $target->name);
         $this->assertSame(42, $target->points);
+    }
+
+    public function testClassRuleListRejectsEmptyArray()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A ClassRuleList needs at least one rule.');
+
+        new ClassRuleList([]);
+    }
+
+    public function testClassRuleWithBothSourcesAndTargets()
+    {
+        $rule = new ClassRule(sources: [ClassRuleB::class], targets: [ClassRuleA::class]);
+
+        $this->assertTrue($rule(null, new ClassRuleB(), new ClassRuleA()));
+        $this->assertFalse($rule(null, new ClassRuleC(), new ClassRuleA()), 'wrong source rejects');
+        $this->assertFalse($rule(null, new ClassRuleB(), new ClassRuleC()), 'wrong target rejects');
+    }
+
+    public function testClassRuleConditionInvokedOnce()
+    {
+        $calls = 0;
+        $rule = new class($calls) implements \Symfony\Component\ObjectMapper\Condition\ClassRuleConditionCallableInterface {
+            public function __construct(private int &$calls)
+            {
+            }
+
+            public function __invoke(mixed $value, object $source, ?object $target): bool
+            {
+                ++$this->calls;
+
+                return true;
+            }
+        };
+
+        $source = new class {
+            public string $foo = 'bar';
+        };
+        $target = new class {
+            public string $foo = '';
+        };
+
+        $factory = $this->createStub(ObjectMapperMetadataFactoryInterface::class);
+        $factory->method('create')->willReturnCallback(static function (object $o, ?string $property = null) use ($rule, $source) {
+            if ($o === $source && 'foo' === $property) {
+                return [new Mapping(target: 'foo', if: $rule::class)];
+            }
+
+            return [];
+        });
+
+        $locator = $this->createStub(ContainerInterface::class);
+        $locator->method('has')->willReturnCallback(static fn ($id) => $id === $rule::class);
+        $locator->method('get')->willReturnCallback(static fn ($id) => $id === $rule::class ? $rule : null);
+
+        (new ObjectMapper($factory, null, null, $locator))->map($source, $target);
+
+        $this->assertSame(1, $calls);
+    }
+
+    public function testReverseClassObjectMapperMetadataFactoryWithMissingTargetClass()
+    {
+        $source = new Cost(10, 20, 'bar');
+
+        $factory = new ReverseClassObjectMapperMetadataFactory(
+            new ReflectionObjectMapperMetadataFactory(),
+            [Cost::class => 'Nonexistent\\Class\\ForReverseFactoryTest'],
+        );
+
+        $this->expectException(\ReflectionException::class);
+        $factory->create($source, 'amount');
     }
 }

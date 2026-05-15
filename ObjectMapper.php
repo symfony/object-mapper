@@ -149,17 +149,18 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     continue;
                 }
 
-                if (
-                    $if
-                    && ($fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class))
-                    && $fn instanceof ClassRuleConditionCallableInterface
-                    && !$this->call($fn, null, $source, $mappedTarget)
-                ) {
-                    continue;
+                $fn = null;
+                $isClassRule = false;
+                if ($if) {
+                    $fn = $this->getCallable($if, $this->conditionCallableLocator, ConditionCallableInterface::class);
+                    $isClassRule = $fn instanceof ClassRuleConditionCallableInterface;
+                    if ($isClassRule && !$this->call($fn, null, $source, $mappedTarget)) {
+                        continue;
+                    }
                 }
 
                 $value = $this->getRawValue($source, $sourcePropertyName);
-                if ($if && $fn && !$this->call($fn, $value, $source, $mappedTarget)) {
+                if ($fn && !$isClassRule && !$this->call($fn, $value, $source, $mappedTarget)) {
                     unset($ctorArguments[$targetPropertyName]);
 
                     continue;
@@ -191,6 +192,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             $rawValue = $this->getRawValue($source, $propertyName);
             if (
                 \is_object($rawValue)
+                && !$objectMap->offsetExists($rawValue)
                 && ($innerMetadata = $this->metadataFactory->create($rawValue))
                 && ($mapTo = $this->getMapTarget($innerMetadata, $rawValue, $source, $mappedTarget))
                 && \is_string($mapTo->target)
