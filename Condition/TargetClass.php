@@ -16,7 +16,7 @@ use Symfony\Component\ObjectMapper\ConditionCallableInterface;
 /**
  * @template T of object
  *
- * @implements ConditionCallableInterface<object, T>
+ * @implements ConditionCallableInterface<object, object>
  */
 final class TargetClass implements ConditionCallableInterface
 {
