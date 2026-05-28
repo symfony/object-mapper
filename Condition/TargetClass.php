@@ -14,7 +14,7 @@ namespace Symfony\Component\ObjectMapper\Condition;
 /**
  * @template T of object
  *
- * @implements ClassRuleConditionCallableInterface<object, T>
+ * @implements ClassRuleConditionCallableInterface<object, object>
  */
 final class TargetClass implements ClassRuleConditionCallableInterface
 {
