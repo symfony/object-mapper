@@ -26,7 +26,7 @@ final class ReverseClassObjectMapperMetadataFactory implements ObjectMapperMetad
     private array $attributesCache = [];
 
     /**
-     * @param array<class-string, class-string> $classMap
+     * @param array<class-string, class-string|list<class-string>> $classMap Targets for a given source must be unique
      */
     public function __construct(
         private readonly ObjectMapperMetadataFactoryInterface $objectMapperMetadataFactory,
@@ -44,33 +44,32 @@ final class ReverseClassObjectMapperMetadataFactory implements ObjectMapperMetad
         }
 
         $mappings = $this->objectMapperMetadataFactory->create($object, $property, $context);
+        $targetClasses = (array) ($this->classMap[$class] ?? []);
 
-        if (!$targetClass = $this->classMap[$class] ?? null) {
+        if (!$targetClasses) {
             return $mappings;
         }
 
         if (!$property) {
-            $mappings[] = new Mapping($targetClass);
+            foreach ($targetClasses as $targetClass) {
+                if (!array_any($mappings, static fn (Mapping $m): bool => $m->target === $targetClass)) {
+                    $mappings[] = new Mapping($targetClass);
+                }
+            }
 
             return $this->attributesCache[$key] = $mappings;
         }
 
-        $refl = new \ReflectionClass($targetClass);
-        foreach ($refl->getProperties() as $reflProperty) {
-            $attributes = $reflProperty->getAttributes(Map::class, \ReflectionAttribute::IS_INSTANCEOF);
+        foreach ($targetClasses as $targetClass) {
+            foreach ((new \ReflectionClass($targetClass))->getProperties() as $reflProperty) {
+                foreach ($reflProperty->getAttributes(Map::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+                    $map = $attribute->newInstance();
+                    if ($map->source !== $property) {
+                        continue;
+                    }
 
-            foreach ($attributes as $attribute) {
-                $map = $attribute->newInstance();
-                // We're forcing the target on a reverse mapping to the property name, doesn't make sense without a source
-                if (!$map->source) {
-                    continue;
+                    $mappings[] = new Mapping($reflProperty->getName(), $map->source, $map->if, $map->transform, targetClass: $targetClass);
                 }
-
-                if ($map->source !== $property) {
-                    continue;
-                }
-
-                $mappings[] = new Mapping($reflProperty->getName(), $map->source, $map->if, $map->transform);
             }
         }
 

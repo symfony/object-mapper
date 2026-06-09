@@ -131,6 +131,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         $mapToProperties = [];
+        $targetName = $targetRefl->getName();
         foreach ($refl->getProperties() as $property) {
             if ($property->isStatic()) {
                 continue;
@@ -138,6 +139,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
             $propertyName = $property->getName();
             $mappings = $this->metadataFactory->create($readMetadataFrom, $propertyName);
+            $mappings = array_filter($mappings, static fn (Mapping $m): bool => !$m->targetClass || is_a($targetName, $m->targetClass, true));
             foreach ($mappings as $mapping) {
                 $sourcePropertyName = $propertyName;
                 if ($mapping->source && (!$refl->hasProperty($propertyName) || !isset($source->$propertyName))) {
@@ -200,9 +202,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 \is_object($rawValue)
                 && !$objectMap->offsetExists($rawValue)
                 && ($innerMetadata = $this->metadataFactory->create($rawValue))
-                && ($mapTo = $this->getMapTarget($innerMetadata, $rawValue, $source, $mappedTarget))
-                && \is_string($mapTo->target)
-                && $mapTo->target === $targetRefl->getName()
+                && array_any($innerMetadata, static fn (Mapping $m): bool => \is_string($m->target) && is_a($targetName, $m->target, true))
             ) {
                 ($this->objectMapper ?? $this)->map($rawValue, $mappedTarget);
             }

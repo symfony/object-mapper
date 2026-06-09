@@ -30,8 +30,11 @@ final class ReverseMappingPass implements CompilerPassInterface
         $classes = [];
         foreach ($container->findTaggedResourceIds('object_mapper.map') as $tags) {
             foreach ($tags as $tag) {
-                if (isset($tag['source'], $tag['target'])) {
-                    $classes[$tag['source']] = $tag['target'];
+                if (!isset($tag['source'], $tag['target'])) {
+                    continue;
+                }
+                if (!\in_array($tag['target'], $classes[$tag['source']] ?? [], true)) {
+                    $classes[$tag['source']][] = $tag['target'];
                 }
             }
         }
