@@ -189,6 +189,10 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                 continue;
             }
 
+            if (!$this->isReadable($source, $propertyName, $refl)) {
+                continue;
+            }
+
             $rawValue = $this->getRawValue($source, $propertyName);
             if (
                 \is_object($rawValue)
@@ -239,17 +243,20 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         return $mappedTarget;
     }
 
-    private function isReadable(object $source, string $propertyName): bool
+    private function isReadable(object $source, string $propertyName, ?\ReflectionClass $refl = null): bool
     {
         if ($this->propertyAccessor) {
             return $this->propertyAccessor->isReadable($source, $propertyName);
         }
 
-        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
-            return false;
+        if (!property_exists($source, $propertyName)) {
+            return isset($source->{$propertyName});
         }
 
-        return true;
+        $refl ??= new \ReflectionClass($source);
+
+        // a dynamic (undeclared) property exists on the instance and is publicly readable
+        return !$refl->hasProperty($propertyName) || $refl->getProperty($propertyName)->isPublic();
     }
 
     private function getRawValue(object $source, string $propertyName): mixed

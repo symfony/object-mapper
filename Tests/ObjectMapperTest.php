@@ -36,6 +36,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSource
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\CostRequestWithSourceView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\RichDomainUser;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\RichDomainUserView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\A as ClassRuleA;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\B as ClassRuleB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassRule\C as ClassRuleC;
@@ -132,6 +134,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformC
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionD;
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 final class ObjectMapperTest extends TestCase
 {
@@ -847,6 +850,30 @@ final class ObjectMapperTest extends TestCase
         $this->assertEquals('bar', $costRequestView->foo, 'Explicit mapping should work');
         $this->assertEquals(10, $costRequestView->amount, 'Auto-mapping should also work for properties with the same name');
         $this->assertEquals(20, $costRequestView->tax);
+    }
+
+    #[DataProvider('provideAccessor')]
+    public function testClassMapIgnoresUnreadableSourcePropertyAbsentFromTarget(?PropertyAccessorInterface $accessor)
+    {
+        $mapper = new ObjectMapper(
+            new ReverseClassObjectMapperMetadataFactory(
+                new ReflectionObjectMapperMetadataFactory(),
+                [RichDomainUser::class => RichDomainUserView::class],
+            ),
+            $accessor,
+        );
+
+        $view = $mapper->map(new RichDomainUser());
+
+        $this->assertInstanceOf(RichDomainUserView::class, $view);
+        $this->assertSame(1, $view->id);
+        $this->assertSame('john', $view->username);
+    }
+
+    public static function provideAccessor(): iterable
+    {
+        yield 'with property accessor' => [PropertyAccess::createPropertyAccessor()];
+        yield 'without property accessor' => [null];
     }
 
     public function testMissingSourcePropertiesAreIgnored()
