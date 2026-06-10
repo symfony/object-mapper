@@ -59,6 +59,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\InstanceCallbackWithArguments\
 use Symfony\Component\ObjectMapper\Tests\Fixtures\LazyFoo;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MagicGet\MagicGetUser;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MagicGet\MagicGetUserView;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MapExistingObject\ExistingObjectWithPublicProperty;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MapExistingObject\ExistingObjectWithSetter;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
@@ -156,6 +158,14 @@ final class ObjectMapperTest extends TestCase
         $d->concat = 'shouldtestme';
 
         yield [$d, [$a], [new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor()]];
+
+        $existingObjectWithSetterExpected = new ExistingObjectWithSetter('bar');
+        $existingObjectWithSetterTarget = new ExistingObjectWithSetter('foo');
+        yield [$existingObjectWithSetterExpected, [(object) ['name' => 'bar'], $existingObjectWithSetterTarget], [new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor()]];
+
+        $existingObjectWithPublicPropertyExpected = new ExistingObjectWithPublicProperty('bar');
+        $existingObjectWithPublicPropertyTarget = new ExistingObjectWithPublicProperty('foo');
+        yield [$existingObjectWithPublicPropertyExpected, [(object) ['name' => 'bar'], $existingObjectWithPublicPropertyTarget], [new ReflectionObjectMapperMetadataFactory(), PropertyAccess::createPropertyAccessor()]];
 
         yield [new MultipleTargetsC(foo: 'bar'), [new MultipleTargetsA()]];
     }
