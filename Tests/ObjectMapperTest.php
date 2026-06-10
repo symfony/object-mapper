@@ -77,6 +77,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullSo
 use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\IsNotNullCondition\IsNotNullTargetMapping;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\LazyFoo;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MagicGet\MagicGetUser;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\MagicGet\MagicGetUserView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\AToBMapper;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\MapStructMapperMetadataFactory;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\MapStruct\Source;
@@ -133,6 +135,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformC
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionC;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\TransformCollection\TransformCollectionD;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\Uninitialized\Draft;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\Uninitialized\DraftView;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
@@ -874,6 +878,29 @@ final class ObjectMapperTest extends TestCase
     {
         yield 'with property accessor' => [PropertyAccess::createPropertyAccessor()];
         yield 'without property accessor' => [null];
+    }
+
+    #[DataProvider('provideAccessor')]
+    public function testNonPublicSourcePropertyExposedByMagicGetIsMapped(?PropertyAccessorInterface $accessor)
+    {
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), $accessor);
+
+        $view = $mapper->map(new MagicGetUser());
+
+        $this->assertInstanceOf(MagicGetUserView::class, $view);
+        $this->assertSame(1, $view->id);
+        $this->assertSame('magic-value', $view->name);
+    }
+
+    #[DataProvider('provideAccessor')]
+    public function testUninitializedSourcePropertyAbsentFromTargetIsIgnored(?PropertyAccessorInterface $accessor)
+    {
+        $mapper = new ObjectMapper(new ReflectionObjectMapperMetadataFactory(), $accessor);
+
+        $view = $mapper->map(new Draft());
+
+        $this->assertInstanceOf(DraftView::class, $view);
+        $this->assertSame('hello', $view->title);
     }
 
     public function testMissingSourcePropertiesAreIgnored()

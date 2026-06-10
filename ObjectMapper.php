@@ -255,8 +255,20 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
 
         $refl ??= new \ReflectionClass($source);
 
-        // a dynamic (undeclared) property exists on the instance and is publicly readable
-        return !$refl->hasProperty($propertyName) || $refl->getProperty($propertyName)->isPublic();
+        if (!$refl->hasProperty($propertyName)) {
+            // ReflectionClass doesn't see dynamic properties: property_exists() matched one, and those are always public
+            return true;
+        }
+
+        $property = $refl->getProperty($propertyName);
+
+        if (!$property->isPublic()) {
+            // a non-public property can only be read through magic __get()
+            return method_exists($source, '__get');
+        }
+
+        // an uninitialized property is not readable, unless unset() re-enabled magic methods on it
+        return $property->isInitialized($source) || isset($source->{$propertyName});
     }
 
     private function getRawValue(object $source, string $propertyName): mixed
