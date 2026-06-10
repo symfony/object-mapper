@@ -226,11 +226,23 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             return $this->propertyAccessor->isReadable($source, $propertyName);
         }
 
-        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
-            return false;
+        if (!property_exists($source, $propertyName)) {
+            return isset($source->{$propertyName});
         }
 
-        return true;
+        $refl = new \ReflectionClass($source);
+
+        if (!$refl->hasProperty($propertyName)) {
+            return true;
+        }
+
+        $property = $refl->getProperty($propertyName);
+
+        if (!$property->isPublic()) {
+            return method_exists($source, '__get');
+        }
+
+        return $property->isInitialized($source) || isset($source->{$propertyName});
     }
 
     private function getRawValue(object $source, string $propertyName): mixed
