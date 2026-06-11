@@ -200,6 +200,8 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             $rawValue = $this->getRawValue($source, $propertyName);
             if (
                 \is_object($rawValue)
+                // a self-referencing relation maps to the same target by definition, merging it would overwrite the target with the related object's values
+                && !$rawValue instanceof $source
                 && !$objectMap->offsetExists($rawValue)
                 && ($innerMetadata = $this->metadataFactory->create($rawValue))
                 && array_any($innerMetadata, static fn (Mapping $m): bool => \is_string($m->target) && is_a($targetName, $m->target, true))

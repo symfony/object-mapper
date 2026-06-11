@@ -132,6 +132,8 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadO
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ReadOnlyPromotedProperty\ReadOnlyPromotedPropertyBMapped;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\AB;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\Recursion\Dto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\SelfReferencing\Category;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\SelfReferencing\CategoryDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\LoadedValueService;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\ServiceLoadedValueTransformer;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ServiceLoadedValue\ValueToMap;
@@ -1274,5 +1276,19 @@ final class ObjectMapperTest extends TestCase
 
         $this->expectException(\ReflectionException::class);
         $factory->create($source, 'amount');
+    }
+
+    public function testSelfReferencingPropertyIsNotMergedIntoTarget()
+    {
+        $root = new Category(1, 'root');
+        $child = new Category(2, 'child');
+        $child->parent = $root;
+
+        $mapper = new ObjectMapper();
+        $dto = $mapper->map($child);
+
+        $this->assertInstanceOf(CategoryDto::class, $dto);
+        $this->assertSame(2, $dto->id);
+        $this->assertSame('child', $dto->name);
     }
 }
