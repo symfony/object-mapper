@@ -79,6 +79,13 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransfor
 use Symfony\Component\ObjectMapper\Tests\Fixtures\NestedMappingWithClassTransformer\ParentTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\FinalInput;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PartialInput\PartialInput;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\ChildEntity;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\ChildEntityDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\ConstructorlessChildEntityDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\MappedChildEntity;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\MappedChildEntityDto;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\RedeclaredChildEntity;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\PrivateParentProperty\RedeclaredChildEntityDto;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Source as PromotedConstructorSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructor\Target as PromotedConstructorTarget;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\PromotedConstructorWithMetadata\Source as PromotedConstructorWithMetadataSource;
@@ -819,5 +826,68 @@ final class ObjectMapperTest extends TestCase
         $this->assertInstanceOf(ChildWithClassTransformTarget::class, $target->childWithBothTransformers);
         $this->assertSame('both', $target->childWithBothTransformers->name);
         $this->assertTrue($target->childWithBothTransformers->classTransformed);
+    }
+
+    public function testMapsPrivatePropertyFromParentClassWithPropertyAccessor()
+    {
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+
+        $source = new ChildEntity(id: 42, name: 'Test');
+        $target = $mapper->map($source);
+
+        $this->assertInstanceOf(ChildEntityDto::class, $target);
+        $this->assertSame(42, $target->id);
+        $this->assertSame('Test', $target->name);
+    }
+
+    public function testPrivatePropertyFromParentClassIsIgnoredWithoutPropertyAccessor()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new ChildEntity(id: 42, name: 'Test');
+        $target = $mapper->map($source);
+
+        $this->assertInstanceOf(ChildEntityDto::class, $target);
+        // without a property accessor, getId() is not discoverable and a non-public property is only readable through magic __get()
+        $this->assertNull($target->id);
+        $this->assertSame('Test', $target->name);
+    }
+
+    public function testRedeclaredPrivateParentPropertyResolvesToChildVersion()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new RedeclaredChildEntity(tag: 'overridden');
+        $target = $mapper->map($source);
+
+        $this->assertInstanceOf(RedeclaredChildEntityDto::class, $target);
+        $this->assertSame('overridden', $target->tag);
+    }
+
+    public function testMapsPrivateParentPropertyToConstructorlessTarget()
+    {
+        $mapper = new ObjectMapper(propertyAccessor: PropertyAccess::createPropertyAccessor());
+
+        $source = new ChildEntity(id: 42, name: 'Test');
+        $target = $mapper->map($source, ConstructorlessChildEntityDto::class);
+
+        // the target has no constructor, so the value cannot come through the constructor-arguments path:
+        // the private parent $id is mapped only because it is now discovered as a source property
+        $this->assertSame(42, $target->id);
+        $this->assertSame('Test', $target->name);
+    }
+
+    public function testMappedPrivateParentPropertyWithoutAccessorIsSkippedWithoutWarning()
+    {
+        $mapper = new ObjectMapper();
+
+        $source = new MappedChildEntity(name: 'Test');
+        $target = $mapper->map($source);
+
+        // the parent's private property carries a #[Map] but is unreadable without an accessor or magic __get(),
+        // so it is skipped rather than read (which would emit an "Undefined property" warning)
+        $this->assertInstanceOf(MappedChildEntityDto::class, $target);
+        $this->assertSame('Test', $target->name);
+        $this->assertNull($target->secret);
     }
 }
