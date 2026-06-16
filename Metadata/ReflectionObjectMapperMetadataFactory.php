@@ -12,6 +12,7 @@
 namespace Symfony\Component\ObjectMapper\Metadata;
 
 use Symfony\Component\ObjectMapper\Attribute\Map;
+use Symfony\Component\ObjectMapper\ClassHierarchyTrait;
 use Symfony\Component\ObjectMapper\Exception\MappingException;
 
 /**
@@ -21,6 +22,8 @@ use Symfony\Component\ObjectMapper\Exception\MappingException;
  */
 final class ReflectionObjectMapperMetadataFactory implements ObjectMapperMetadataFactoryInterface
 {
+    use ClassHierarchyTrait;
+
     private array $reflectionClassCache = [];
     private array $attributesCache = [];
 
@@ -34,7 +37,11 @@ final class ReflectionObjectMapperMetadataFactory implements ObjectMapperMetadat
             }
 
             $refl = $this->reflectionClassCache[$object::class] ??= new \ReflectionClass($object);
-            $attributes = ($property ? $refl->getProperty($property) : $refl)->getAttributes(Map::class, \ReflectionAttribute::IS_INSTANCEOF);
+            $target = $refl;
+            if ($property && null === $target = $this->getPropertyFromHierarchy($refl, $property)) {
+                return $this->attributesCache[$key] = [];
+            }
+            $attributes = $target->getAttributes(Map::class, \ReflectionAttribute::IS_INSTANCEOF);
             $mappings = [];
             foreach ($attributes as $attribute) {
                 $map = $attribute->newInstance();
