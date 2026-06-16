@@ -11,11 +11,11 @@
 
 namespace Symfony\Component\ObjectMapper\Tests\Fixtures\SelfReferencing;
 
-final readonly class CategoryDto
+final class CategoryDto
 {
     public function __construct(
-        public int $id,
-        public string $name,
+        public readonly int $id,
+        public readonly string $name,
     ) {
     }
 }
