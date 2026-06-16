@@ -30,6 +30,8 @@ use Symfony\Component\VarExporter\LazyObjectInterface;
  */
 final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInterface
 {
+    use ClassHierarchyTrait;
+
     /**
      * Tracks recursive references.
      */
@@ -130,7 +132,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         $mapToProperties = [];
-        foreach ($refl->getProperties() as $property) {
+        foreach ($this->getAllProperties($refl) as $property) {
             if ($property->isStatic()) {
                 continue;
             }
@@ -139,7 +141,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             $mappings = $this->metadataFactory->create($readMetadataFrom, $propertyName);
             foreach ($mappings as $mapping) {
                 $sourcePropertyName = $propertyName;
-                if ($mapping->source && (!$refl->hasProperty($propertyName) || !isset($source->$propertyName))) {
+                if ($mapping->source && !$this->isReadable($source, $propertyName)) {
                     $sourcePropertyName = $mapping->source;
                 }
 
@@ -155,6 +157,12 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     && ($fn = $this->getCallable($if, $this->conditionCallableLocator))
                     && $fn instanceof TargetClass
                     && !$this->call($fn, null, $source, $mappedTarget)
+                ) {
+                    continue;
+                }
+
+                if (!$this->isReadable($source, $sourcePropertyName)
+                    && $this->getPropertyFromHierarchy(new \ReflectionClass($source), $sourcePropertyName)
                 ) {
                     continue;
                 }
@@ -175,8 +183,8 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
                     continue;
                 }
 
-                $sourceProperty = $refl->getProperty($propertyName);
-                if ($refl->isInstance($source) && !$sourceProperty->isInitialized($source)) {
+                $sourceProperty = $this->getPropertyFromHierarchy($refl, $propertyName);
+                if ($sourceProperty && $refl->isInstance($source) && !$sourceProperty->isInitialized($source)) {
                     continue;
                 }
 
@@ -221,6 +229,12 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
         }
 
         if (!property_exists($source, $propertyName)) {
+            // only a private property declared by a parent class is invisible to property_exists();
+            // like any other non-public property, it can only be read through magic __get()
+            if ($this->getPropertyFromHierarchy($refl ??= new \ReflectionClass($source), $propertyName)) {
+                return method_exists($source, '__get');
+            }
+
             return isset($source->{$propertyName});
         }
 
@@ -249,7 +263,9 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             }
         }
 
-        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})) {
+        if (!property_exists($source, $propertyName) && !isset($source->{$propertyName})
+            && !$this->getPropertyFromHierarchy(new \ReflectionClass($source), $propertyName)
+        ) {
             throw new NoSuchPropertyException(\sprintf('The property "%s" does not exist on "%s".', $propertyName, get_debug_type($source)));
         }
 
@@ -409,7 +425,7 @@ final class ObjectMapper implements ObjectMapperInterface, ObjectMapperAwareInte
             return $refl;
         }
 
-        foreach ($refl->getProperties() as $property) {
+        foreach ($this->getAllProperties($refl) as $property) {
             if ($this->metadataFactory->create($source, $property->getName())) {
                 return $refl;
             }
