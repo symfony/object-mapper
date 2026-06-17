@@ -12,6 +12,7 @@
 namespace Symfony\Component\ObjectMapper\Metadata;
 
 use Symfony\Component\ObjectMapper\Attribute\Map;
+use Symfony\Component\ObjectMapper\ClassHierarchyTrait;
 
 /**
  * Maps classes based on attributes found on the target's properties.
@@ -20,6 +21,8 @@ use Symfony\Component\ObjectMapper\Attribute\Map;
  */
 final class ReverseClassObjectMapperMetadataFactory implements ObjectMapperMetadataFactoryInterface
 {
+    use ClassHierarchyTrait;
+
     /**
      * @var array<string, list<Mapping>>
      */
@@ -61,7 +64,7 @@ final class ReverseClassObjectMapperMetadataFactory implements ObjectMapperMetad
         }
 
         foreach ($targetClasses as $targetClass) {
-            foreach ((new \ReflectionClass($targetClass))->getProperties() as $reflProperty) {
+            foreach ($this->getAllProperties(new \ReflectionClass($targetClass)) as $reflProperty) {
                 foreach ($reflProperty->getAttributes(Map::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
                     $map = $attribute->newInstance();
                     if ($map->source !== $property) {

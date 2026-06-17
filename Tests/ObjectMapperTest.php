@@ -42,6 +42,7 @@ use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\ExtensibleTargetChild
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\ExtensibleTargetParent;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\PreMappedSource;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\PreMappedTarget;
+use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\PrivateMappedChildView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\Quote;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\QuoteRequestView;
 use Symfony\Component\ObjectMapper\Tests\Fixtures\ClassMap\RichDomainUser;
@@ -870,6 +871,27 @@ final class ObjectMapperTest extends TestCase
 
         $this->assertInstanceOf(CostRequestWithSourceView::class, $costRequestView);
         $this->assertEquals('bar', $costRequestView->foo);
+    }
+
+    public function testClassMapWithSourceAttributeOnPrivateParentProperty()
+    {
+        $classMap = [
+            Cost::class => PrivateMappedChildView::class,
+        ];
+
+        $cost = new Cost(10, 20, 'bar');
+
+        $mapper = new ObjectMapper(
+            new ReverseClassObjectMapperMetadataFactory(new ReflectionObjectMapperMetadataFactory(), $classMap),
+            PropertyAccess::createPropertyAccessor(),
+        );
+
+        $view = $mapper->map($cost);
+
+        // The "#[Map(source: 'bar')]" attribute sits on a private property
+        // inherited from the parent class and must still be discovered.
+        $this->assertInstanceOf(PrivateMappedChildView::class, $view);
+        $this->assertSame('bar', $view->getFoo());
     }
 
     public function testClassMapWithSourceAttributeDoesNotBreakAutoMapping()
